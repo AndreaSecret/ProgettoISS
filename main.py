@@ -15,6 +15,20 @@ screen=pygame.display.set_mode(screen_size)
 selected_button_i = 0
 buttons[selected_button_i].set_active(True)
 
+
+
+def menu_check_input(buttons, selected_button_i):
+    if event.key == pygame.K_UP:
+        buttons[selected_button_i].set_active(False) #ricoloro a normale il tasto
+        selected_button_i = (selected_button_i-1) % len(buttons) #trovo il nuovo tasto da evidenziare
+        buttons[selected_button_i].set_active(True) #e lo coloro
+    if event.key == pygame.K_DOWN: #analogo a K_UP
+        buttons[selected_button_i].set_active(False)
+        selected_button_i = (selected_button_i+1) % len(buttons)
+        buttons[selected_button_i].set_active(True)
+    if event.key == pygame.K_RETURN: #il bottone si attiva cliccando il tasto enter
+        buttons[selected_button_i].activate()
+
 while game.run:
     key_input=pygame.key.get_pressed()
     screen.fill('Black')
@@ -24,16 +38,7 @@ while game.run:
             sys.exit()
             game.run = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                buttons[selected_button_i].set_active(False) #ricoloro a normale il tasto
-                selected_button_i = (selected_button_i-1) % len(buttons) #trovo il nuovo tasto da evidenziare
-                buttons[selected_button_i].set_active(True) #e lo coloro
-            if event.key == pygame.K_DOWN: #analogo a K_UP
-                buttons[selected_button_i].set_active(False)
-                selected_button_i = (selected_button_i+1) % len(buttons)
-                buttons[selected_button_i].set_active(True)
-            if event.key == pygame.K_RETURN: #il bottone si attiva cliccando il tasto enter
-                buttons[selected_button_i].activate()
+            menu_check_input(buttons, selected_button_i)
             
     buttons_group.draw(screen)
     pygame.display.update()

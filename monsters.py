@@ -25,7 +25,7 @@ class HealAction(MonsterAction):
     def execute(self, attacker, target=None):
         attacker.hp += self.power
 
-class MonsterActionFactory:
+class MonsterActionFactory:     
     @staticmethod
     def create_attack(name, power):
         return AttackAction(name, power)
@@ -38,13 +38,14 @@ class MonsterActionFactory:
 # monsters
 
 class Monster(pygame.sprite.Sprite):
-    def __init__(self, name, moves, hp, attack, defense, image, team):
+    def __init__(self, name, moves, hp, attack, defense, speed, image, team):
         super().__init__()
         self.name = name
         self.moves = moves
         self.hp = hp
         self.attack = attack
         self.defense = defense
+        self.speed = speed
         self.image = image
         self.team = team
 
@@ -60,10 +61,13 @@ class Monster(pygame.sprite.Sprite):
         print(f'atk: {self.attack}')
         print(f'hp: {self.hp}')
         print(f'def: {self.defense}')
+        print(f'speed: {self.speed}')
 
     def use_move(self, move_index, target=None):
-        if target == None: target = self
+        if target == None:
+            target = self
         self.moves[move_index].execute(self, target)
+
     
 
 # monster factory
@@ -77,6 +81,7 @@ class MonsterFactory:
             hp=150,
             attack=20,
             defense=50,
+            speed=10,
             moves=[
                 self.move_factory.create_attack("Palla di fuoco", 25),
                 self.move_factory.create_heal("Rigenerazione", 20)],
@@ -90,6 +95,7 @@ class MonsterFactory:
             hp=100,
             attack=50,
             defense=15,
+            speed=20,
             moves=[
                 self.move_factory.create_attack("Morso", 30),
                 self.move_factory.create_heal("Cambio muta", 15)],

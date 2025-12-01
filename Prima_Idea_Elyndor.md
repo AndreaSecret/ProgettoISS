@@ -1,16 +1,14 @@
 
-
 'Benvenuto in Elyndor, una terra dove la magia vive in ogni cosa: nelle foreste che cantano, nei fiumi che brillano al chiaro di luna, e negli esseri straordinari conosciuti come Mostri del Legame.
 
 Molto tempo fa, gli uomini scoprirono di poter stringere un patto con queste creature, condividendo parte della propria energia vitale. Così nacquero gli Evocatori, coloro che combattono non per distruggere, ma per dimostrare la forza del proprio legame.
 
 Dalle antiche guerre è nato un nuovo equilibrio: oggi i conflitti, le dispute e perfino i tornei reali vengono risolti attraverso battaglie rituali tra evocatori. Due sfidanti, uno contro uno, mettono alla prova le proprie abilità scegliendo i mostri con cui affrontare l’avversario.
 
-Ogni mostro possiede poteri unici, punti di forza e debolezze, e può crescere ed evolversi insieme al proprio evocatore. Solo chi saprà conoscere davvero la propria creatura potrà sbloccarne il pieno potenziale e scoprire le misteriose Mosse Primordiali.
+Ogni mostro possiede poteri unici, punti di forza e debolezze, e può crescere ed evolversi insieme al proprio evocatore. Solo chi saprà conoscere davvero la propria creatura potrà sbloccarne il pieno potenziale e scoprire le misteriose Mosse +.
 
 In Elyndor, ogni battaglia racconta una storia.
 E ogni storia nasce da un legame.'
-
 
 
 

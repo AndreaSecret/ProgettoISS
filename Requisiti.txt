@@ -1,0 +1,37 @@
+REQUISITI NON FUNZIONALI
+Grafica 8-bit
+Il gioco utilizza sprite in stile 8-bit creati con strumenti esterni; il sistema deve supportare asset statici e animati a bassa risoluzione senza ridurre la leggibilità.
+
+Interfaccia Utente Semplice
+L’interfaccia deve presentare informazioni essenziali (salute, energia, stato del turno) in modo chiaro, minimizzando elementi visivi non necessari.
+
+Tempo di Risposta ≤ 100ms
+Ogni input del giocatore (movimento, attacco, selezione opzioni) deve produrre un aggiornamento percettibile entro 100ms per mantenere la reattività.
+
+Frame Rate ≥ 30 FPS
+Il ciclo di rendering deve mantenere una frequenza stabile di almeno 30 FPS anche in presenza di animazioni e transizioni semplici.
+
+Accessibilità Tastiera + Palette Accessibili
+Tutte le azioni devono essere eseguibili tramite tastiera, con combinazioni intuitive; la palette colori deve rispettare soglie minime di contrasto per favorire la percezione.
+
+
+
+
+#baseline battaglia 1vs1
+
+
+REQUISITI FUNZIONALI
+Sistema a Turni Alternati
+Il gioco gestisce turni sequenziali: ogni giocatore, nel suo turno, può scegliere una delle azioni disponibili (eseguire una decisione su che mossa compiere).
+
+Fasi di Attacco e Difesa
+Il gioco alterna meccaniche di offesa e difesa: quando un giocatore attacca, l’altro entra automaticamente in fase di difesa e riceve il danno calcolato.
+
+Gestione degli Attachi (Power-Up)
+L’azione “power-up” incrementa l'output offensivo del giocatore
+
+Interfaccia Realizzata con Pygame
+Il sistema utilizza Pygame per la gestione dell’input, del rendering grafico e del loop principale.
+
+Condizione di Vittoria
+Il gioco termina quando la salute dei mostri di uno dei giocatori raggiunge lo zero; deve essere mostrata una schermata di vittoria

@@ -46,7 +46,8 @@ class Monster(pygame.sprite.Sprite):
         self.attack = attack
         self.defense = defense
         self.speed = speed
-        self.image = image
+        self.image = pygame.Surface((200,200))
+        self.image.fill('Red')
         self.team = team
 
     def check_is_alive(self):
@@ -113,15 +114,15 @@ monster_factory = MonsterFactory(move_factory)
 drago = monster_factory.create_dragon(0)
 serpe = monster_factory.create_snake(1)
 
-print('stats prima della interazione:\n')
-drago.print_stats()
-serpe.print_stats()
+# print('stats prima della interazione:\n')
+# drago.print_stats()
+# serpe.print_stats()
 
-drago.use_move(0, serpe)
+# drago.use_move(0, serpe)
 
-print('\ndrago attacca serpe\n')
-serpe.print_stats()
+# print('\ndrago attacca serpe\n')
+# serpe.print_stats()
 
-serpe.use_move(1)
-print('\nserpe si cura\n')
-serpe.print_stats()
+# serpe.use_move(1)
+# print('\nserpe si cura\n')
+# serpe.print_stats()

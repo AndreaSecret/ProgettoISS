@@ -14,7 +14,10 @@ class ButtonAction(ABC):
 
 class PlayAction(ButtonAction):
     def execute(self):
-        print("Il gioco non esiste...")
+        game.start_menu = False
+        game.game_start = True
+        game.buttons.empty()
+        game.buttons.add(butt_fight, butt_changemonster)
 
 class ExitAction(ButtonAction):
     def __init__(self, game):
@@ -23,6 +26,16 @@ class ExitAction(ButtonAction):
     def execute(self):
         self.game.run = False
 
+class ChangeMonster(ButtonAction):
+    def execute(self):
+        print('hai solo un mostro')
+
+class ChooseMove(ButtonAction):
+    def execute(self):
+        game.choose_move_menu = True
+        game.choose_action_menu = False
+        
+
 # button factory
 class ButtonFactory:
     def __init__(self, screen_size, button_size, font):
@@ -30,8 +43,7 @@ class ButtonFactory:
         self.button_size = button_size
         self.font = font
 
-    def create_button(self, text, y, action):
-        x = (self.screen_size[0] - self.button_size[0]) / 2
+    def create_button(self, text, x, y, action):
         return Button(text, (x, y), self.button_size, action, self.font)
     
 
@@ -63,11 +75,15 @@ class Button(pygame.sprite.Sprite):
     def activate(self):
         self.action.execute()
 
-buttons_dim = (250, 90)
+
+buttons_dim = (400, 130)
 button_factory = ButtonFactory(screen_size, buttons_dim, game_font)
 
-butt1 = button_factory.create_button("Gioca", 200, PlayAction())
-butt2 = button_factory.create_button("Esci", 400, ExitAction(game))
+butt_startgame = button_factory.create_button("Gioca", (screen_x - buttons_dim[0]) / 2, 200, PlayAction())
+butt_exitgame = button_factory.create_button("Esci", (screen_x - buttons_dim[0]) / 2, 400, ExitAction(game))
 
-buttons = [butt1, butt2]
-buttons_group = pygame.sprite.Group(buttons)
+buttons = [butt_startgame, butt_exitgame]
+game.buttons = pygame.sprite.Group(buttons)
+
+butt_fight = button_factory.create_button("Combatti", screen_x/4-buttons_dim[0]/2, 4/5* screen_y, ChooseMove())
+butt_changemonster = button_factory.create_button("Cambia", screen_x*3/4-buttons_dim[0]/2, 4/5* screen_y, ChangeMonster())

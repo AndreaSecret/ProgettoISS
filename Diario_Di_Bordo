@@ -1,3 +1,7 @@
 26/11/2025
 Iniziato lo sprint! In data odierna ci siamo concentrati sulla prima user story del nostro product backlog. Abbiamo lavorato sul design delle classi e sui loro testing. 
 Abbiamo implementato anche la classe Buttons, che come factory method, instanzia ogni singolo bottone come specificato da standard. 
+
+1/12/2025 
+In data odierna ci siamo occupati di migliorare le implementazioni precedenti, e abbiamo iniziato a delineare la GUI che verrà utilizzato per le battaglie. 
+Ci siamo confrontati per decidere quale sarebbe la dimensione ideale della finestra di gioco, in modo tale da utilizzare dimensioni coerenti per tutti i tipi di schermi.

@@ -15,6 +15,6 @@ while run:
             sys.exit()
             run = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_RIGHT:
                 run = False
                 print('hshdgh')

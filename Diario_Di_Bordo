@@ -5,3 +5,6 @@ Abbiamo implementato anche la classe Buttons, che come factory method, instanzia
 1/12/2025 
 In data odierna ci siamo occupati di migliorare le implementazioni precedenti, e abbiamo iniziato a delineare la GUI che verrà utilizzato per le battaglie. 
 Ci siamo confrontati per decidere quale sarebbe la dimensione ideale della finestra di gioco, in modo tale da utilizzare dimensioni coerenti per tutti i tipi di schermi.
+
+3/12/2025
+In data odierna ci siamo occupati di ridefinire meglio il nostro sprint, raffinare alcune User Story e implementarne altre. Sono anche stati fatti alcuni fix ad errori precedenti 

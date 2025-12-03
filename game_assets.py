@@ -1,10 +1,11 @@
 
 # Informazioni generali di inizializzazione
-
-from pygame import font, display, init
+import pyautogui
+from pygame import font, init
 init()
-infoObject = display.Info()
-screen_x, screen_y = infoObject.current_w, infoObject.current_h
+screen_x, screen_y = pyautogui.size()
+print(screen_x,screen_y)
+
 
 class Game:
     def __init__(self):

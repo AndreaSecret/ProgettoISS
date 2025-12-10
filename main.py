@@ -14,6 +14,8 @@ fps = 30
 screen=pygame.display.set_mode(screen_size, FULLSCREEN)
 
 
+drago_pos = (screen_x/2-screen_x/4,screen_y/4)
+serpe_pos = (screen_x/2+screen_x/4-serpe.image.get_size()[0],screen_y/4)
 while game.run:
     key_input=pygame.key.get_pressed()
     screen.fill('Black')
@@ -26,9 +28,12 @@ while game.run:
                 game.run = False
             
     if game.game_start:
-        screen.blit(drago.image, (screen_x/2-screen_x/4,screen_y/4))
-        screen.blit(serpe.image, (screen_x/2+screen_x/4-serpe.image.get_size()[0],screen_y/4))
+        screen.blit(drago.image, drago_pos)
+        screen.blit(serpe.image, serpe_pos)
         screen.blit(bar, (0, 3/4*screen_y))
+        screen.blit(game.turn_surface, game.turn_surf_pos)
+        serpe.update()
+        drago.update()
     game.buttons_group.draw(screen)
     pygame.display.update()
     clock.tick(fps)

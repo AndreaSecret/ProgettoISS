@@ -24,6 +24,7 @@ class AttackAction(MonsterAction):
 class HealAction(MonsterAction):
     def execute(self, attacker, target=None):
         attacker.hp += self.power
+        if attacker.hp > attacker.max_hp: attacker.hp = attacker.max_hp
 
 class MonsterActionFactory:     
     @staticmethod
@@ -34,40 +35,32 @@ class MonsterActionFactory:
     def create_heal(name, power):
         return HealAction(name, power)
 
+DEFAULT_MOVES = {
+    'attack': MonsterActionFactory.create_attack("Graffio", 15),
+    'heal': MonsterActionFactory.create_attack("Rigenerazione", 15),
+}
+
 
 # monsters
 
 class Monster(pygame.sprite.Sprite):
-    def __init__(self, name, moves, hp, attack, defense, speed, image, team):
+    def __init__(self, name, moves, hp, attack, defense, image, team):
         super().__init__()
         self.name = name
         self.moves = moves
         self.hp = hp
+        self.max_hp = hp
         self.attack = attack
         self.defense = defense
-        self.speed = speed
         self.image = pygame.Surface((200,200))
-        self.image.fill('Red')
+        self.image.fill('Blue')
         self.team = team
 
-    def check_is_alive(self):
+    def update(self):
         if self.hp<=0:
             #self.kill()
-            print(f'{self.name} dead')
-        else:
-            print(f'{self.name}\'s hp: {self.hp}')
+            self.image.fill('Red')
     
-    def print_stats(self):
-        print(f'{self.name} stats:')
-        print(f'atk: {self.attack}')
-        print(f'hp: {self.hp}')
-        print(f'def: {self.defense}')
-        print(f'speed: {self.speed}')
-
-    def use_move(self, move_index, target=None):
-        if target == None:
-            target = self
-        self.moves[move_index].execute(self, target)
 
     
 
@@ -82,10 +75,11 @@ class MonsterFactory:
             hp=150,
             attack=20,
             defense=50,
-            speed=10,
             moves=[
                 self.move_factory.create_attack("Palla di fuoco", 25),
-                self.move_factory.create_heal("Rigenerazione", 20)],
+                self.move_factory.create_heal("Assorbi magma", 20),
+                DEFAULT_MOVES['attack'],
+                DEFAULT_MOVES['heal']],
             image=None,
             team=team
         )
@@ -96,10 +90,11 @@ class MonsterFactory:
             hp=100,
             attack=50,
             defense=15,
-            speed=20,
             moves=[
                 self.move_factory.create_attack("Morso", 30),
-                self.move_factory.create_heal("Cambio muta", 15)],
+                self.move_factory.create_heal("Cambio muta", 15),
+                DEFAULT_MOVES['attack'],
+                DEFAULT_MOVES['heal']],
             image=None,
             team=team
         )

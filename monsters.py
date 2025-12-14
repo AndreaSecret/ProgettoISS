@@ -37,7 +37,7 @@ class MonsterActionFactory:
 
 DEFAULT_MOVES = {
     'attack': MonsterActionFactory.create_attack("Graffio", 15),
-    'heal': MonsterActionFactory.create_attack("Rigenerazione", 15),
+    'heal': MonsterActionFactory.create_heal("Rigenerazione", 15),
 }
 
 
@@ -108,16 +108,3 @@ monster_factory = MonsterFactory(move_factory)
 
 drago = monster_factory.create_dragon(0)
 serpe = monster_factory.create_snake(1)
-
-# print('stats prima della interazione:\n')
-# drago.print_stats()
-# serpe.print_stats()
-
-# drago.use_move(0, serpe)
-
-# print('\ndrago attacca serpe\n')
-# serpe.print_stats()
-
-# serpe.use_move(1)
-# print('\nserpe si cura\n')
-# serpe.print_stats()

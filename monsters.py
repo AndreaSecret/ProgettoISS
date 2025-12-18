@@ -1,8 +1,12 @@
-import unittest
 from abc import ABC, abstractmethod
 import pygame
 from game_assets import *
-
+serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
+serpe_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
+drago_front_img =  pygame.transform.scale(pygame.Surface(monster_size), monster_size)
+drago_front_img.fill("#FFA601")
+drago_back_img =  pygame.transform.scale(pygame.Surface(monster_size), monster_size)
+drago_back_img.fill("#895900")
 
 # monster actions
 class MonsterAction(ABC):
@@ -43,8 +47,8 @@ DEFAULT_MOVES = {
 
 # monsters
 
-class Monster(pygame.sprite.Sprite):
-    def __init__(self, name, moves, hp, attack, defense, image, team):
+class Monster:
+    def __init__(self, name, moves, hp, attack, defense, front_image, back_image, team):
         super().__init__()
         self.name = name
         self.moves = moves
@@ -52,17 +56,10 @@ class Monster(pygame.sprite.Sprite):
         self.max_hp = hp
         self.attack = attack
         self.defense = defense
-        self.image = pygame.Surface((200,200))
-        self.image.fill('Blue')
+        self.front_image = front_image
+        self.back_image = back_image
         self.team = team
 
-    def update(self):
-        if self.hp<=0:
-            #self.kill()
-            self.image.fill('Red')
-    
-
-    
 
 # monster factory
 class MonsterFactory:
@@ -71,7 +68,7 @@ class MonsterFactory:
 
     def create_dragon(self, team):
         return Monster(
-            name="Dragonazzo",
+            name="Drago",
             hp=150,
             attack=20,
             defense=50,
@@ -80,13 +77,14 @@ class MonsterFactory:
                 self.move_factory.create_heal("Assorbi magma", 20),
                 DEFAULT_MOVES['attack'],
                 DEFAULT_MOVES['heal']],
-            image=None,
+            front_image=drago_front_img,
+            back_image=drago_back_img,
             team=team
         )
 
     def create_snake(self, team):
         return Monster(
-            name="Pitone Programmatore",
+            name="Serpe",
             hp=100,
             attack=50,
             defense=15,
@@ -95,7 +93,8 @@ class MonsterFactory:
                 self.move_factory.create_heal("Cambio muta", 15),
                 DEFAULT_MOVES['attack'],
                 DEFAULT_MOVES['heal']],
-            image=None,
+            front_image=serpe_front_img,
+            back_image=serpe_back_img,
             team=team
         )
 

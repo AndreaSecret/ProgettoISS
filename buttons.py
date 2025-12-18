@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 import pygame
 from game_assets import *
 from monsters import drago, serpe
+from Monsters_sprites import VisualMonster
+from animations import switch_animation
 
 
 #button action functions
@@ -13,7 +15,10 @@ class ButtonAction(ABC):
 
 class PlayAction(ButtonAction):
     def execute(self):
-        game.game_start = True
+        global MENU_LAYOUTS
+        game.start_game(serpe, drago, VisualMonster)
+        mosse=button_factory.create_move_buttons(game.selected_monster.moves)
+        MENU_LAYOUTS['choose_move']['buttons'] = mosse
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
         game.active_menu = 'choose_action'
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
@@ -45,6 +50,8 @@ class UseMove(ButtonAction):
         
         global MENU_LAYOUTS
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
+        switch_anims = switch_animation(game.selected_monster_sprite, game.enemy_monster_sprite)
+        game.add_animation(switch_anims)
         new_moves = game.switch_turn()
         mosse=button_factory.create_move_buttons(new_moves)
         MENU_LAYOUTS['choose_move']['buttons'] = mosse
@@ -129,9 +136,6 @@ game.refresh_buttons([butt_startgame, butt_exitgame])
 butt_fight = button_factory.create_menu_button("Combatti", screen_x/4 - main_menu_buttons_dim[0]/2, 4/5* screen_y, ChooseMove())
 butt_changemonster = button_factory.create_menu_button("Cambia", screen_x*3/4 - main_menu_buttons_dim[0]/2, 4/5* screen_y, ChangeMonster())
 
-game.selected_monster = drago
-game.enemy_monster = serpe
-mosse=button_factory.create_move_buttons(game.selected_monster.moves)
 
 MENU_LAYOUTS = {
     "start": {
@@ -145,7 +149,7 @@ MENU_LAYOUTS = {
         "cols": 2
     },
     "choose_move": {
-        "buttons": mosse,
+        "buttons": None,
         "rows": 2,
         "cols": 2
     }

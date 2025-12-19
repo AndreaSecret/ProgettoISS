@@ -3,8 +3,6 @@
 import pygame
 from pygame.locals import FULLSCREEN
 from game_assets import *
-from monsters import drago, serpe
-from Monsters_sprites import VisualMonster
 from bar_menu import bar
 from buttons import buttons_check_input
 
@@ -28,12 +26,9 @@ while game.run:
             
     if game.game_start:
 
-        game.update_animations()
-        game.selected_monster_sprite.update(screen)
-        game.enemy_monster_sprite.update(screen)
+        game.update(screen)
 
         screen.blit(bar, (0, 3/4*screen_y))
-        screen.blit(game.turn_surface, game.turn_surf_pos)
 
     game.buttons_group.draw(screen)
     pygame.display.update()

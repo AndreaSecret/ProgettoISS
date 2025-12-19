@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 import pygame
 from game_assets import *
+
 serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
 serpe_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
-drago_front_img =  pygame.transform.scale(pygame.Surface(monster_size), monster_size)
-drago_front_img.fill("#FFA601")
-drago_back_img =  pygame.transform.scale(pygame.Surface(monster_size), monster_size)
-drago_back_img.fill("#895900")
+drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), monster_size)
+drago_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_back.png'), monster_size)
 
 # monster actions
 class MonsterAction(ABC):

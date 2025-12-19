@@ -4,23 +4,22 @@ import pygame
 from game_assets import *
 from monsters import drago, serpe
 from Monsters_sprites import VisualMonster
-from animations import switch_animation
+from animations import animation_manager
 
 
 #button action functions
+
 class ButtonAction(ABC):
     @abstractmethod
     def execute(self):
         pass
 
 class PlayAction(ButtonAction):
-    def execute(self):
-        global MENU_LAYOUTS
-        game.start_game(serpe, drago, VisualMonster)
-        mosse=button_factory.create_move_buttons(game.selected_monster.moves)
-        MENU_LAYOUTS['choose_move']['buttons'] = mosse
+    def execute(self): #inizio partita
+        game.start_game(serpe, drago, VisualMonster, animation_manager)
+        new_moves = button_factory.create_move_buttons(game.selected_monster.moves)
+        MENU_LAYOUTS['choose_move']['buttons'] = new_moves
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
-        game.active_menu = 'choose_action'
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
         
 
@@ -44,17 +43,17 @@ class ChooseMove(ButtonAction):
 class UseMove(ButtonAction):
     def __init__(self, move):
         self.move = move
+
     def execute(self):
         self.move.execute(game.selected_monster, game.enemy_monster)
 
-        
-        global MENU_LAYOUTS
+        game.animation_manager.add_attack_anim(game.selected_monster_sprite)
+        game.animation_manager.add_switching_sides_anim(game.selected_monster_sprite, game.enemy_monster_sprite)
+
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
-        switch_anims = switch_animation(game.selected_monster_sprite, game.enemy_monster_sprite)
-        game.add_animation(switch_anims)
         new_moves = game.switch_turn()
-        mosse=button_factory.create_move_buttons(new_moves)
-        MENU_LAYOUTS['choose_move']['buttons'] = mosse
+        new_moves = button_factory.create_move_buttons(new_moves)
+        MENU_LAYOUTS['choose_move']['buttons'] = new_moves
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
 
         
@@ -137,23 +136,29 @@ butt_fight = button_factory.create_menu_button("Combatti", screen_x/4 - main_men
 butt_changemonster = button_factory.create_menu_button("Cambia", screen_x*3/4 - main_menu_buttons_dim[0]/2, 4/5* screen_y, ChangeMonster())
 
 
-MENU_LAYOUTS = {
-    "start": {
-        "buttons": [butt_startgame, butt_exitgame],
-        "rows": 2,
-        "cols": 1
-    },
-    "choose_action": {
-        "buttons": [butt_fight, butt_changemonster],
-        "rows": 1,
-        "cols": 2
-    },
-    "choose_move": {
-        "buttons": None,
-        "rows": 2,
-        "cols": 2
-    }
-}
+class MenuLayouts:
+    def __init__(self):
+        self.layouts = {
+            "start": {
+                "buttons": [butt_startgame, butt_exitgame],
+                "rows": 2,
+                "cols": 1
+            },
+            "choose_action": {
+                "buttons": [butt_fight, butt_changemonster],
+                "rows": 1,
+                "cols": 2
+            },
+            "choose_move": {
+                "buttons": None,
+                "rows": 2,
+                "cols": 2
+            }
+        }
+    def __getitem__(self, key): # per comodità
+        return self.layouts[key]
+
+MENU_LAYOUTS = MenuLayouts()
 
 def buttons_check_input(event):
     layout = MENU_LAYOUTS[game.active_menu]

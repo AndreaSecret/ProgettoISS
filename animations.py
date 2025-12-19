@@ -1,4 +1,51 @@
-from game_assets import *
+from game_assets import game, attacking_monster_pos, defending_monster_pos, screen_x
+
+animation_types = ['attacking', 'returning_after_attacking', 'switching_sides']
+
+# singleton managing all the animations
+
+class AnimationManager:
+    def __init__(self):
+        self.current = None
+        self.animations_queue = []
+
+    def add_animations(self, type, animations):
+        self.animations_queue.append((type, animations))
+
+    def update(self):
+        '''
+        La classe lavora sul primo elemento della coda,
+        ogni elemento della coda è formato da una tupla ('nome_animazione', [animazioni])
+        animazioni è una lista, ma può essere anche un solo elemento.
+        Questo perchè se più elementi sono presenti in [animazioni], verranno eseguiti in simultanea.
+        Lavorando infatti su una coda, passa alla seconda animazione in coda solo dopo aver terminato la prima
+        '''
+        if self.animations_queue:
+            self.current, anims = self.animations_queue[0]
+            for anim in anims:
+                is_finished = anim.update()
+                if is_finished:
+                    if len(anims)==1:
+                        self.animations_queue.pop(0)
+            if len(anims)>1 and is_finished: #in questo caso ho fatto finire tutte le animazioni
+                self.animations_queue.pop(0)
+                game.selected_monster_sprite, game.enemy_monster_sprite = game.enemy_monster_sprite, game.selected_monster_sprite
+
+        else:
+            self.current = None
+    
+    def add_switching_sides_anim(self, monster1, monster2):
+        anims = switch_animation(monster1, monster2)
+        self.add_animations('switching_sides', anims)
+    
+    def add_attack_anim(self, monster):
+        atk_anim, return_anim = attack_animations(monster)
+        self.add_animations('attacking', [atk_anim])
+        self.add_animations('returning_after_attacking', [return_anim])
+
+animation_manager = AnimationManager() #singleton
+
+
 class Animation:
     def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration):
         self.obj = obj  # oggetto da muovere
@@ -24,7 +71,7 @@ class Animation:
             t = 1
             self.finished = True
             self.obj.pos = self.end_pos
-            return
+            return self.finished
 
 
         x, y = self.motion_func(t, self.parameters)
@@ -32,9 +79,9 @@ class Animation:
 
         self.frame += 1
 
+ # Geometric calculations and animations functions
 
 import math
-
 
 def compute_ellipse(start, end, a):  # calcola funzione ellisse passante per start e end con data a (mezza larghezza ellisse)
     x1, y1 = start
@@ -91,3 +138,40 @@ def switch_animation(monster1, monster2):
         duration=switch_duration 
     )
     return (anim_atk, anim_def)
+
+
+def compute_line(start, end):
+    x1, y1 = start
+    x2, y2 = end
+    return (x1, y1, x2, y2)
+
+stop_atk = (attacking_monster_pos[0]+abs(attacking_monster_pos[0]-defending_monster_pos[0])/5,attacking_monster_pos[1]-abs(attacking_monster_pos[1]-defending_monster_pos[1])/5)
+atk_line = compute_line(attacking_monster_pos, stop_atk)
+
+def line_motion(t, parameters):
+    x1, y1, x2, y2, reverse = parameters
+
+    if reverse:
+        t = 1 - t
+    x = x1 + (x2 - x1) * t
+    y = y1 + (y2 - y1) * t
+
+    return x, y
+
+atk_duration = 10
+def attack_animations(monster):
+    attack_anim = Animation(
+        obj=monster,
+        start_pos=monster.pos,
+        end_pos=stop_atk,
+        motion_func=line_motion,
+        parameters=atk_line+tuple([False]),
+        duration=atk_duration)
+    return_anim = Animation(
+        obj=monster,
+        start_pos=stop_atk,
+        end_pos=attacking_monster_pos,
+        motion_func=line_motion,
+        parameters=atk_line+tuple([True]),
+        duration=atk_duration)
+    return (attack_anim, return_anim)

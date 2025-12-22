@@ -2,12 +2,21 @@ from abc import ABC, abstractmethod
 import pygame
 from game_assets import *
 
+# caricamente immagini dei mostri
 serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
 serpe_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
 drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), monster_size)
 drago_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_back.png'), monster_size)
 
+MONSTERS = {
+    'Serpe': {'front': serpe_front_img,
+              'back': serpe_back_img},
+    'Drago': {'front': drago_front_img,
+              'back': drago_back_img}
+}
+
 # monster actions
+
 class MonsterAction(ABC):
     def __init__(self, name, power):
         self.name = name
@@ -22,7 +31,6 @@ class AttackAction(MonsterAction):
     def execute(self, attacker, target):
         damage = max(1, attacker.attack + self.power - target.defense) # max perchè se la difesa è troppo alta allora la mossa cura
         target.hp -= damage
-
 
 class HealAction(MonsterAction):
     def execute(self, attacker, target=None):
@@ -44,8 +52,6 @@ DEFAULT_MOVES = {
 }
 
 
-# monsters
-
 class Monster:
     def __init__(self, name, moves, hp, attack, defense, front_image, back_image, team):
         super().__init__()
@@ -60,49 +66,53 @@ class Monster:
         self.team = team
 
 
-# monster factory
 class MonsterFactory:
     def __init__(self, move_factory):
         self.move_factory = move_factory
 
     def create_dragon(self, team):
+        name = 'Drago'
         return Monster(
-            name="Drago",
+            name=name,
             hp=150,
             attack=20,
-            defense=50,
+            defense=35,
             moves=[
-                self.move_factory.create_attack("Palla di fuoco", 25),
+                self.move_factory.create_attack("Palla di fuoco", 30),
                 self.move_factory.create_heal("Assorbi magma", 20),
                 DEFAULT_MOVES['attack'],
                 DEFAULT_MOVES['heal']],
-            front_image=drago_front_img,
-            back_image=drago_back_img,
+            front_image=MONSTERS[name]['front'].copy(),
+            back_image=MONSTERS[name]['back'].copy(),
             team=team
         )
 
     def create_snake(self, team):
+        name = 'Serpe'
         return Monster(
-            name="Serpe",
+            name=name,
             hp=100,
             attack=50,
             defense=15,
             moves=[
-                self.move_factory.create_attack("Morso", 30),
+                self.move_factory.create_attack("Morso", 40),
                 self.move_factory.create_heal("Cambio muta", 15),
                 DEFAULT_MOVES['attack'],
                 DEFAULT_MOVES['heal']],
-            front_image=serpe_front_img,
-            back_image=serpe_back_img,
+            front_image=MONSTERS[name]['front'].copy(),
+            back_image=MONSTERS[name]['back'].copy(),
             team=team
         )
 
+    def create_monster(self, monster_name, team):
+        if monster_name in list(MONSTERS.keys()):
+            match monster_name:
+                case 'Serpe':
+                    return self.create_snake(team)
+                case 'Drago':
+                    return self.create_dragon(team)
+        else:
+            raise ValueError("Questo mostro non esiste")
 
 move_factory = MonsterActionFactory()
 monster_factory = MonsterFactory(move_factory)
-
-#esempio di test
-
-
-drago = monster_factory.create_dragon(0)
-serpe = monster_factory.create_snake(1)

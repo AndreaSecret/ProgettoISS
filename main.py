@@ -2,7 +2,7 @@
 
 import pygame
 from pygame.locals import FULLSCREEN
-from game_assets import *
+from game_assets import game, screen_size
 from bar_menu import bar
 from buttons import buttons_check_input
 
@@ -10,7 +10,6 @@ pygame.init()
 clock = pygame.time.Clock()
 fps = 30
 screen=pygame.display.set_mode(screen_size, FULLSCREEN)
-
 
 while game.run:
     key_input=pygame.key.get_pressed()
@@ -24,12 +23,9 @@ while game.run:
             if event.key == pygame.K_ESCAPE:
                 game.run = False
             
-    if game.game_start:
-
+    if game.match_start:
         game.update(screen)
-
-        screen.blit(bar, (0, 3/4*screen_y))
-
+        bar.draw(screen)
     game.buttons_group.draw(screen)
     pygame.display.update()
     clock.tick(fps)

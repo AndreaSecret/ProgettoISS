@@ -45,7 +45,6 @@ class AnimationManager:
 
 animation_manager = AnimationManager() #singleton
 
-
 class Animation:
     def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration):
         self.obj = obj  # oggetto da muovere

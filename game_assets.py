@@ -9,12 +9,22 @@ screen_size = (screen_x, screen_y)
 game_font = 'game_files/PixeloidSans.ttf'
 turn_font = font.Font(game_font, screen_y//15)
 
+monster_size = round(screen_y/2.7)
+monster_size = (monster_size, monster_size)
+attacking_monster_pos = (screen_x/5,screen_y/2)
+defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
+
 # game core
 
 class Game:
     def __init__(self):
-        self.run = True
-        self.game_start = False
+        self.team_limit = 3 #numero massimo di mostri in squadra
+        self.teams = {0: [],
+                      1: []}
+
+        self.run = True # se l'applicazione è avviata
+        self.game_start = False # se è iniziata la partita 
+        self.match_start = False # se è iniziata la battaglia (quindi draft escluso)
         self.selected_monster = None
         self.enemy_monster = None
 
@@ -29,16 +39,28 @@ class Game:
         self.animation_manager = None
         self.is_in_animation = False
 
-    def start_game(self, selected_monster, enemy_monster, VisualMonsterClass, animation_manager):
+    def add_monster_to_team(self, monster):
+        self.teams[self.turn].append(monster)
+
+        self.turn = abs(self.turn - 1)
+        if len(self.teams[0]) == len(self.teams[1]) == self.team_limit:
+            self.match_start = True
+            self.start_match()
+
+    def set_initiation(self, VisualMonsterClass, animation_manager):
         self.game_start = True
+        self.visualMonsterClass = VisualMonsterClass
+        self.animation_manager = animation_manager
+
+    def start_match(self):
+        self.match_start = True
         self.active_menu = 'choose_action'
 
-        self.selected_monster = selected_monster
-        self.enemy_monster = enemy_monster
-        self.selected_monster_sprite = VisualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking')
-        self.enemy_monster_sprite = VisualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending')
+        self.selected_monster = self.teams[0][0]
+        self.enemy_monster = self.teams[1][0]
+        self.selected_monster_sprite = self.visualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking')
+        self.enemy_monster_sprite = self.visualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending')
 
-        self.animation_manager = animation_manager
 
     def refresh_buttons(self, new_buttons): #rimuove i bottoni attuali e li cambia in new_buttons
         self.buttons_group = Group(new_buttons)
@@ -49,22 +71,17 @@ class Game:
         self.active_menu = 'choose_action'
         self.selected_monster, self.enemy_monster = self.enemy_monster, self.selected_monster
         self.turn = abs(self.turn - 1)
-        self.turn_surface = turn_font.render(str(self.turn), True, 'Yellow')
+        self.turn_surface = turn_font.render(str(self.turn+1), True, 'Yellow')
         return self.selected_monster.moves
 
     def update(self, display):
-        self.animation_manager.update()
-        self.is_in_animation = True if self.animation_manager.current else False
-
-        self.selected_monster_sprite.update(display)
-        self.enemy_monster_sprite.update(display)
+        if self.game_start:
+            self.animation_manager.update()
+            self.is_in_animation = True if self.animation_manager.current else False
+        
+            self.selected_monster_sprite.update(display)
+            self.enemy_monster_sprite.update(display)
 
         display.blit(self.turn_surface, self.turn_surf_pos)
 
 game = Game()
-
-# altre costanti di inizializzazione:
-
-monster_size = (400,400)
-attacking_monster_pos = (screen_x/5,screen_y/2)
-defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)

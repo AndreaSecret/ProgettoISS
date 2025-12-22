@@ -6,6 +6,7 @@ from game_assets import *
 from monsters import monster_factory, MONSTERS
 from Monsters_sprites import VisualMonster
 from animations import animation_manager
+from bar_menu import bar
 from numpy import stack, float32, uint8
 
 #button action functions
@@ -18,7 +19,7 @@ class ButtonAction(ABC):
 
 class PlayAction(ButtonAction):
     def execute(self): #inizio draft
-        game.set_initiation(VisualMonsterClass=VisualMonster, animation_manager=animation_manager)
+        game.set_initiation(VisualMonsterClass=VisualMonster, animation_manager=animation_manager, bar=bar)
 
         monsters_names = choices(list(MONSTERS.keys()), k=12) #scelgo 12 mostri a caso
         imgs = [MONSTERS[monster]['front'].copy() for monster in monsters_names]
@@ -26,7 +27,6 @@ class PlayAction(ButtonAction):
         draft_buttons = button_factory.create_draft_buttons(monsters) #genero i bottoni dei mostri
         MENU_LAYOUTS['draft']['buttons'] = draft_buttons
 
-        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
         game.active_menu = 'draft'
         game.refresh_buttons(MENU_LAYOUTS['draft']['buttons'])
         
@@ -43,7 +43,6 @@ class ChangeMonster(ButtonAction):
 
 class ChooseMove(ButtonAction):
     def execute(self):
-        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
         game.active_menu = 'choose_move'
         game.refresh_buttons(MENU_LAYOUTS['choose_move']['buttons'])
 
@@ -57,7 +56,6 @@ class UseMove(ButtonAction):
         game.animation_manager.add_attack_anim(game.selected_monster_sprite)
         game.animation_manager.add_switching_sides_anim(game.selected_monster_sprite, game.enemy_monster_sprite)
 
-        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
         new_moves = game.switch_turn()
         new_moves = button_factory.create_move_buttons(new_moves)
         MENU_LAYOUTS['choose_move']['buttons'] = new_moves
@@ -73,7 +71,6 @@ class ChooseDraft(ButtonAction):
         if game.match_start: #se i team sono completi, inizia la battaglia
             new_moves = button_factory.create_move_buttons(game.selected_monster.moves)
             MENU_LAYOUTS['choose_move']['buttons'] = new_moves
-            #MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
             game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
         else: #sennò procede con la selezione del prossimo mostro
             game.selected_button_i = 0
@@ -116,11 +113,11 @@ class ButtonFactory:
         buttons = []
         x, y = draft_x_padding, draft_y_padding
         for monster_name, monster_img in monsters[:6]:
-            buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), monster_img))
+            buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), self.font, monster_img))
             x+=button_w+draft_x_padding
         x, y = draft_x_padding, draft_y_padding*2+button_w
         for monster_name, monster_img in monsters[6:]:
-            buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), monster_img))
+            buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), self.font, monster_img))
             x+=button_w+draft_x_padding
         return buttons
 
@@ -158,29 +155,32 @@ class Button(pygame.sprite.Sprite):
         self.render()
 
     def activate(self):
+        self.set_active(False)
         self.action.execute()
 
 class DraftButton(Button):
-    def __init__(self, name, pos, size, action, monster_image):
+    def __init__(self, name, pos, size, action, font, monster_image):
         self.base_img = pygame.transform.scale(monster_image, size)
         self.unselected_image = None
-        super().__init__(name, pos, size, action, font=None, inactive_color=None, active_color=None)
+        super().__init__(name, pos, size, action, font, inactive_color=None, active_color=None)
+
+        # creazione immagini selezionate e non
         self.w = self.size[0]
         self.selection_offset = self.w*0.05
         self.unselected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
         self.unselected_image.blit(self.base_img, (self.selection_offset,self.selection_offset))
         self.image = self.unselected_image
-        self.select_surface = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
+
+        self.selected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
         selection_color = 'Yellow'
         selection_width = 2
-        pygame.draw.rect(self.select_surface, selection_color, (0,0,self.w+self.selection_offset*2,self.w+self.selection_offset*2), selection_width)
+        pygame.draw.rect(self.selected_image, selection_color, (0,0,self.w+self.selection_offset*2,self.w+self.selection_offset*2), selection_width)
+        self.selected_image.blit(self.base_img, (self.selection_offset,self.selection_offset))
+
 
     def render(self):
         if self.active:
-            new_img = pygame.Surface((self.w+self.selection_offset*2,self.w+self.selection_offset*2))
-            new_img.blit(self.select_surface, (0,0))
-            new_img.blit(self.base_img, (self.selection_offset,self.selection_offset))
-            self.image = new_img
+            self.image = self.selected_image
         else:
             self.image = self.unselected_image
 
@@ -189,8 +189,17 @@ class DraftButton(Button):
         self.activable = False
 
         self.base_img = self.grayscale(self.base_img)
-        self.unselected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
         self.unselected_image.blit(self.base_img, (self.selection_offset,self.selection_offset))
+        self.selected_image.blit(self.base_img, (self.selection_offset,self.selection_offset))
+
+        text_size = self.rect.h//2
+        text_font = pygame.font.Font(self.font, text_size)
+        turn_text_surface = text_font.render(str(game.turn+1), True, game.team_colors[game.turn])
+        text_x = (self.rect.w - turn_text_surface.get_width())/2
+        text_y = (self.rect.h - turn_text_surface.get_height())/2
+        self.selected_image.blit(turn_text_surface, (text_x, text_y))
+        self.unselected_image.blit(turn_text_surface, (text_x, text_y))
+
         self.image = self.unselected_image
 
         self.action.execute()

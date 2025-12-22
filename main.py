@@ -23,9 +23,9 @@ while game.run:
             if event.key == pygame.K_ESCAPE:
                 game.run = False
             
-    if game.match_start:
+    if game.game_start:
         game.update(screen)
-        bar.draw(screen)
+        
     game.buttons_group.draw(screen)
     pygame.display.update()
     clock.tick(fps)

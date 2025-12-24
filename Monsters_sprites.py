@@ -28,6 +28,12 @@ class VisualMonster(Sprite):
         if self.monster.hp<=0:
             self.death_effect()
 
+    def change_monster(self, monster):
+        self.monster = monster
+        self.front_image = monster.front_image
+        self.back_image = monster.back_image
+        self.image = self.back_image
+
     def death_effect(self):
         #self.kill()
         self.image.fill('Red')

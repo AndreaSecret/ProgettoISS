@@ -1,9 +1,7 @@
 # main loop file
-
 import pygame
 from pygame.locals import FULLSCREEN
 from game_assets import game, screen_size
-from bar_menu import bar
 from buttons import buttons_check_input
 
 pygame.init()
@@ -25,7 +23,7 @@ while game.run:
             
     if game.game_start:
         game.update(screen)
-        
+
     game.buttons_group.draw(screen)
     pygame.display.update()
     clock.tick(fps)

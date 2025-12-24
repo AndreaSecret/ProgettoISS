@@ -1,6 +1,6 @@
 from game_assets import game, attacking_monster_pos, defending_monster_pos, screen_x
 
-animation_types = ['attacking', 'returning_after_attacking', 'switching_sides']
+animation_types = ['attacking', 'returning_to_place', 'switching_sides']
 
 # singleton managing all the animations
 
@@ -34,19 +34,19 @@ class AnimationManager:
         else:
             self.current = None
     
-    def add_switching_sides_anim(self, monster1, monster2):
-        anims = switch_animation(monster1, monster2)
+    def add_switching_sides_anim(self, monster1, monster2, game_switch):
+        anims = switch_animation(monster1, monster2, game_switch)
         self.add_animations('switching_sides', anims)
     
-    def add_attack_anim(self, monster):
-        atk_anim, return_anim = attack_animations(monster)
+    def add_attack_anim(self, monster_sprite, target, move):
+        atk_anim, return_anim = attack_animations(monster_sprite, target, move)
         self.add_animations('attacking', [atk_anim])
-        self.add_animations('returning_after_attacking', [return_anim])
+        self.add_animations('returning_to_place', [return_anim])
 
 animation_manager = AnimationManager() #singleton
 
 class Animation:
-    def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration):
+    def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration, on_finish = None):
         self.obj = obj  # oggetto da muovere
         self.start_pos = start_pos # posizione di partenza
         self.end_pos = end_pos # posizione di arrivo a fine animazione
@@ -55,11 +55,7 @@ class Animation:
         self.duration = duration # numero frame di durata animazione
         self.frame = 0 
         self.finished = False
-
-    def start(self):
-        self.frame = 0
-        self.finished = False
-        self.obj.pos = self.start_pos  # inizializza posizione
+        self.on_finish = on_finish # funzione da applicare una volta finita l'animazione
 
     def update(self):
         if self.finished:
@@ -70,6 +66,8 @@ class Animation:
             t = 1
             self.finished = True
             self.obj.pos = self.end_pos
+            if self.on_finish:
+                self.on_finish() 
             return self.finished
 
 
@@ -119,14 +117,15 @@ def ellipse_motion(t, parameters):  # funzione effettiva ellissa (sign cambia il
     return x, y
 
 switch_duration = 50 
-def switch_animation(monster1, monster2):
+def switch_animation(monster1, monster2, game_switch):
     anim_atk = Animation(
         obj=monster1,
         start_pos=monster1.pos,
         end_pos=monster2.pos,
         motion_func=ellipse_motion,
         parameters=(theta_attacking, elip, -1),
-        duration=switch_duration
+        duration=switch_duration,
+        on_finish=game_switch
     )
     anim_def = Animation(
         obj=monster2,
@@ -144,8 +143,13 @@ def compute_line(start, end):
     x2, y2 = end
     return (x1, y1, x2, y2)
 
+# per mosse con target il nemico (attacco e debuff)
 stop_atk = (attacking_monster_pos[0]+abs(attacking_monster_pos[0]-defending_monster_pos[0])/5,attacking_monster_pos[1]-abs(attacking_monster_pos[1]-defending_monster_pos[1])/5)
 atk_line = compute_line(attacking_monster_pos, stop_atk)
+
+# per mosse con target se stesso (cura e buff)
+stop_heal = (attacking_monster_pos[0],attacking_monster_pos[1]-abs(attacking_monster_pos[1]-defending_monster_pos[1])/5)
+heal_line = compute_line(attacking_monster_pos, stop_heal)
 
 def line_motion(t, parameters):
     x1, y1, x2, y2, reverse = parameters
@@ -158,19 +162,32 @@ def line_motion(t, parameters):
     return x, y
 
 atk_duration = 10
-def attack_animations(monster):
+def attack_animations(monster_sprite, target, move):
+    if move.target == 'to_self':
+        end_pos = stop_heal
+        line = heal_line
+    elif move.target == 'to_other':
+        end_pos = stop_atk
+        line = atk_line
+    else:
+        raise ValueError('Move target not identified')
+
+    def apply_effect():
+        move.execute(monster_sprite.monster, target)
+
     attack_anim = Animation(
-        obj=monster,
-        start_pos=monster.pos,
-        end_pos=stop_atk,
+        obj=monster_sprite,
+        start_pos=monster_sprite.pos,
+        end_pos=end_pos,
         motion_func=line_motion,
-        parameters=atk_line+tuple([False]),
-        duration=atk_duration)
+        parameters=line+tuple([False]),
+        duration=atk_duration,
+        on_finish=apply_effect)
     return_anim = Animation(
-        obj=monster,
-        start_pos=stop_atk,
+        obj=monster_sprite,
+        start_pos=end_pos,
         end_pos=attacking_monster_pos,
         motion_func=line_motion,
-        parameters=atk_line+tuple([True]),
+        parameters=line+tuple([True]),
         duration=atk_duration)
     return (attack_anim, return_anim)

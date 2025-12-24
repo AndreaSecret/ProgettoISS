@@ -1,4 +1,3 @@
-
 # Informazioni generali di inizializzazione
 import pyautogui
 from pygame import font
@@ -9,6 +8,7 @@ screen_size = (screen_x, screen_y)
 game_font = 'game_files/PixeloidSans.ttf'
 turn_font = font.Font(game_font, screen_y//15)
 
+bar_h = screen_y/4 #altezza della barra sotto
 monster_size = round(screen_y/2.7) #dimensione sprite mostri selezionati
 monster_size = (monster_size, monster_size)
 attacking_monster_pos = (screen_x/5,screen_y/2)
@@ -18,7 +18,7 @@ defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
 
 class Game:
     def __init__(self):
-        self.team_limit = 3 #numero massimo di mostri in squadra
+        self.team_limit = 2 #numero massimo di mostri in squadra (CAMBIABILE DA 1 A 6!!!)
         self.teams = {0: [],
                       1: []}
         self.team_colors = {
@@ -79,7 +79,10 @@ class Game:
         self.active_menu = 'choose_action'
         self.selected_monster, self.enemy_monster = self.enemy_monster, self.selected_monster
         self.switch_turn_number()
-        return self.selected_monster.moves
+
+    def switch_monster(self, monster):
+        self.selected_monster = monster
+        self.selected_monster_sprite.change_monster(monster)
 
     def update(self, display):
         if self.match_start:

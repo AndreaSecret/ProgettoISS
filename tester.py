@@ -1,9 +1,6 @@
-def ciao(a: list):
-    print(a)
-ciao(1)
-
-
-
+a = [1,2,3]
+a.remove(6)
+print(a)
 
 # import pygame
 # from buttons import DraftButton, ChangeMonster

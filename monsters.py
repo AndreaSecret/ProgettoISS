@@ -18,9 +18,10 @@ MONSTERS = {
 # monster actions
 
 class MonsterAction(ABC):
-    def __init__(self, name, power):
+    def __init__(self, name, power, target):
         self.name = name
         self.power = power
+        self.target = target
 
     @abstractmethod
     def execute(self, attacker, target):
@@ -40,11 +41,11 @@ class HealAction(MonsterAction):
 class MonsterActionFactory:     
     @staticmethod
     def create_attack(name, power):
-        return AttackAction(name, power)
+        return AttackAction(name, power, target = 'to_other')
 
     @staticmethod
     def create_heal(name, power):
-        return HealAction(name, power)
+        return HealAction(name, power, target = 'to_self')
 
 DEFAULT_MOVES = {
     'attack': MonsterActionFactory.create_attack("Graffio", 15),

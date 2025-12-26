@@ -43,10 +43,13 @@ class AnimationManager:
         self.add_animations('attacking', [atk_anim])
         self.add_animations('returning_to_place', [return_anim])
 
+    def add_death_anim(self, monster_sprite):
+        self.animations_queue.insert(1, ('dying', [death_animation(monster_sprite)]))
+
 animation_manager = AnimationManager() #singleton
 
 class Animation:
-    def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration, on_finish = None):
+    def __init__(self, obj, start_pos, end_pos, motion_func, parameters, duration, on_finish = None, fade_out = None):
         self.obj = obj  # oggetto da muovere
         self.start_pos = start_pos # posizione di partenza
         self.end_pos = end_pos # posizione di arrivo a fine animazione
@@ -56,6 +59,8 @@ class Animation:
         self.frame = 0 
         self.finished = False
         self.on_finish = on_finish # funzione da applicare una volta finita l'animazione
+        self.fade_out = fade_out # valore di alpha che vuoi che raggiunga l'oggetto a fine animazione (dissolvenza graduale)
+        self.alpha = 255
 
     def update(self):
         if self.finished:
@@ -66,11 +71,17 @@ class Animation:
             t = 1
             self.finished = True
             self.obj.pos = self.end_pos
+            if self.fade_out:
+                self.obj.image.set_alpha(self.fade_out)
             if self.on_finish:
                 self.on_finish() 
             return self.finished
 
-
+        if self.fade_out:
+            self.alpha = int(255 + (self.fade_out - 255) * t)
+            self.obj.image.set_alpha(self.alpha)
+            self.obj.front_image.set_alpha(self.alpha)
+            self.obj.back_image.set_alpha(self.alpha)
         x, y = self.motion_func(t, self.parameters)
         self.obj.pos = (x, y)
 
@@ -191,3 +202,19 @@ def attack_animations(monster_sprite, target, move):
         parameters=line+tuple([True]),
         duration=atk_duration)
     return (attack_anim, return_anim)
+
+# può morire solo il mostro attaccato
+stop_death = (defending_monster_pos[0],defending_monster_pos[1]+abs(attacking_monster_pos[1]-defending_monster_pos[1])/5)
+death_line = compute_line(defending_monster_pos, stop_death)
+death_anim_duration = 60
+def death_animation(monster_sprite):
+    death_anim = Animation(
+        obj=monster_sprite,
+        start_pos=monster_sprite.pos,
+        end_pos=stop_death,
+        motion_func=line_motion,
+        parameters=death_line+tuple([False]),
+        duration=death_anim_duration,
+        fade_out=1,
+        on_finish=monster_sprite.monster.die)
+    return death_anim

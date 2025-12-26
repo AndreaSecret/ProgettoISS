@@ -18,7 +18,7 @@ defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
 
 class Game:
     def __init__(self):
-        self.team_limit = 2 #numero massimo di mostri in squadra (CAMBIABILE DA 1 A 6!!!)
+        self.team_limit = 0 #numero massimo di mostri in squadra (CAMBIABILE DA 1 A 6!!!)
         self.teams = {0: [],
                       1: []}
         self.team_colors = {
@@ -43,6 +43,16 @@ class Game:
         self.animation_manager = None
         self.is_in_animation = False
 
+    def set_initiation(self, menu_layouts, VisualMonsterClass, animation_manager, bar, selected_box, enemy_box):
+        self.MENU_LAYOUT = menu_layouts
+        self.game_start = True
+        self.visualMonsterClass = VisualMonsterClass
+        self.animation_manager = animation_manager
+        self.game_bar = bar
+        self.selected_box = selected_box
+        self.enemy_box = enemy_box
+        self.box_group = Group(self.selected_box, self.enemy_box)
+
     def add_monster_to_team(self, monster):
         self.teams[self.turn].append(monster)
 
@@ -51,11 +61,12 @@ class Game:
             self.match_start = True
             self.start_match()
 
-    def set_initiation(self, VisualMonsterClass, animation_manager, bar):
-        self.game_start = True
-        self.visualMonsterClass = VisualMonsterClass
-        self.animation_manager = animation_manager
-        self.game_bar = bar
+    def remove_monster_from_team(self, monster): #quando un mostro muore
+        self.teams[monster.team].remove(monster)
+
+        if len(self.teams[monster.team])==0:
+            print(f'Giocatore {str(abs(self.turn)+1)} vince')
+            self.run = False
 
     def start_match(self):
         self.match_start = True
@@ -65,24 +76,41 @@ class Game:
         self.enemy_monster = self.teams[1][0]
         self.selected_monster_sprite = self.visualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking')
         self.enemy_monster_sprite = self.visualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending')
+        self.selected_box.set_monster(self.selected_monster)
+        self.enemy_box.set_monster(self.enemy_monster)
 
     def refresh_buttons(self, new_buttons): #rimuove i bottoni attuali e li cambia in new_buttons
         self.buttons_group = Group(new_buttons)
         self.selected_button_i = 0
         new_buttons[self.selected_button_i].set_active(True)
 
+    def refresh_moves(self):
+        self.MENU_LAYOUT.update_moves_buttons()
+        self.active_menu = 'choose_action'
+        self.refresh_buttons(self.MENU_LAYOUT['choose_action']['buttons'])
+
     def switch_turn_number(self):
         self.turn = abs(self.turn - 1)
         self.turn_surface = turn_font.render(str(self.turn+1), True, self.team_colors[self.turn])
 
     def switch_turn(self):
-        self.active_menu = 'choose_action'
         self.selected_monster, self.enemy_monster = self.enemy_monster, self.selected_monster
+        self.selected_box.set_monster(self.selected_monster)
+        self.enemy_box.set_monster(self.enemy_monster)
+        if self.selected_monster.alive:
+            self.active_menu = 'choose_action'
+        else:
+            self.active_menu = 'change_monster'
+            self.MENU_LAYOUT.update_change_monster_buttons(force_change=True)
+            self.refresh_buttons(self.MENU_LAYOUT['change_monster']['buttons'])
+
+        self.MENU_LAYOUT.update_moves_buttons()
         self.switch_turn_number()
 
     def switch_monster(self, monster):
         self.selected_monster = monster
         self.selected_monster_sprite.change_monster(monster)
+        self.selected_box.set_monster(self.selected_monster)
 
     def update(self, display):
         if self.match_start:
@@ -93,6 +121,9 @@ class Game:
             self.enemy_monster_sprite.update(display)
 
             self.game_bar.draw(display)
+            self.box_group.update()
+            if self.animation_manager.current!='switching_sides':
+                self.box_group.draw(display)
 
         display.blit(self.turn_surface, self.turn_surf_pos)
 

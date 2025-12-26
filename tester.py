@@ -1,5 +1,5 @@
 a = [1,2,3]
-a.remove(6)
+a.insert(2, 4)
 print(a)
 
 # import pygame

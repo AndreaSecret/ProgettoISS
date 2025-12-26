@@ -25,7 +25,7 @@ class VisualMonster(Sprite):
         screen.blit(self.image, self.pos)
         self.rect.topleft = self.pos
 
-        if self.monster.hp<=0:
+        if self.monster.hp<=0 and self.monster.alive:
             self.death_effect()
 
     def change_monster(self, monster):
@@ -35,5 +35,4 @@ class VisualMonster(Sprite):
         self.image = self.back_image
 
     def death_effect(self):
-        #self.kill()
-        self.image.fill('Red')
+        game.animation_manager.add_death_anim(self)

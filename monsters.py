@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import pygame
-from game_assets import *
+from game_assets import monster_size, game
 
 # caricamente immagini dei mostri
 serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
@@ -65,7 +65,12 @@ class Monster:
         self.front_image = front_image
         self.back_image = back_image
         self.team = team
+        self.alive = True
 
+    def die(self):
+        self.hp = 0
+        self.alive = False
+        game.remove_monster_from_team(self)
 
 class MonsterFactory:
     def __init__(self, move_factory):

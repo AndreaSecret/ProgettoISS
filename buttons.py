@@ -6,7 +6,7 @@ from game_assets import game, screen_size, screen_x, screen_y, game_font, bar_h
 from monsters import monster_factory, MONSTERS
 from Monsters_sprites import VisualMonster
 from animations import animation_manager
-from bar_menu import bar
+from bar_menu import bar, defending_monster_box, attacking_monster_box
 from numpy import stack, float32, uint8
 
 #button action functions
@@ -18,18 +18,12 @@ class ButtonAction(ABC):
 
 
 class PlayAction(ButtonAction):
-    def execute(self): #inizio draft
-        game.set_initiation(VisualMonsterClass=VisualMonster, animation_manager=animation_manager, bar=bar)
+    def execute(self):
+        game.active_menu = 'choose_team_limit'
+        new_buttons = button_factory.create_choose_team_limit_buttons()
+        MENU_LAYOUTS.update_menu_buttons('choose_team_limit', new_buttons)
+        game.refresh_buttons(MENU_LAYOUTS['choose_team_limit']['buttons'])
 
-        monsters_names = choices(list(MONSTERS.keys()), k=12) #scelgo 12 mostri a caso
-        imgs = [MONSTERS[monster]['front'].copy() for monster in monsters_names]
-        monsters = zip(monsters_names, imgs)
-        draft_buttons = button_factory.create_draft_buttons(monsters) #genero i bottoni dei mostri
-        MENU_LAYOUTS['draft']['buttons'] = draft_buttons
-
-        game.active_menu = 'draft'
-        game.refresh_buttons(MENU_LAYOUTS['draft']['buttons'])
-        
 class ExitAction(ButtonAction):
     def __init__(self, game):
         self.game = game
@@ -37,11 +31,45 @@ class ExitAction(ButtonAction):
     def execute(self):
         self.game.run = False
 
+class SetTeamLimitAction(ButtonAction):
+    def __init__(self, number):
+        self.number = number
+    def execute(self):
+        game.team_limit = self.number
+        MENU_LAYOUTS['change_monster']['cols'] = self.number
+        start_draft()
+
+def start_draft(): #inizio draft
+    game.set_initiation(menu_layouts=MENU_LAYOUTS, VisualMonsterClass=VisualMonster, animation_manager=animation_manager, bar=bar, selected_box=attacking_monster_box, enemy_box=defending_monster_box)
+
+    monsters_names = choices(list(MONSTERS.keys()), k=12) #scelgo 12 mostri a caso
+    imgs = [MONSTERS[monster]['front'].copy() for monster in monsters_names]
+    monsters = zip(monsters_names, imgs)
+    draft_buttons = button_factory.create_draft_buttons(monsters) #genero i bottoni dei mostri
+    MENU_LAYOUTS.update_menu_buttons('draft', draft_buttons)
+
+    game.active_menu = 'draft'
+    game.refresh_buttons(MENU_LAYOUTS['draft']['buttons'])
+
+class ChooseDraft(ButtonAction):
+    def __init__(self, monster_name):
+        self.monster_name = monster_name
+    def execute(self):
+        #crea l'entità mostro e lo aggiunge al team
+        monster = monster_factory.create_monster(self.monster_name, game.turn)
+        game.add_monster_to_team(monster)
+        if game.match_start: #se i team sono completi, inizia la battaglia
+            new_moves = button_factory.create_move_buttons(game.selected_monster.moves)
+            MENU_LAYOUTS.update_menu_buttons('choose_move', new_moves)
+            game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
+        else: #sennò procede con la selezione del prossimo mostro
+            game.selected_button_i = 0
+            MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
+
 class ChangeMonster(ButtonAction):
     def execute(self):
         game.active_menu = 'change_monster'
-        new_buttons = button_factory.create_change_monster_buttons(game.teams[game.turn])
-        MENU_LAYOUTS['change_monster']['buttons'] = new_buttons
+        MENU_LAYOUTS.update_change_monster_buttons()
         game.refresh_buttons(MENU_LAYOUTS['change_monster']['buttons'])
 
 class Back_from_ChangeMonster(ButtonAction):
@@ -55,8 +83,7 @@ class ChooseMonster(ButtonAction):
     def execute(self):
         game.switch_monster(self.monster)
         game.active_menu = 'choose_action'
-        update_moves()
-
+        game.refresh_moves()
 
 class ChooseMove(ButtonAction):
     def execute(self):
@@ -71,22 +98,7 @@ class UseMove(ButtonAction):
         game.animation_manager.add_attack_anim(game.selected_monster_sprite, game.enemy_monster, self.move)
         game.animation_manager.add_switching_sides_anim(game.selected_monster_sprite, game.enemy_monster_sprite, game.switch_turn)
         game.active_menu = 'choose_action'
-        update_moves()
-
-class ChooseDraft(ButtonAction):
-    def __init__(self, monster_name):
-        self.monster_name = monster_name
-    def execute(self):
-        #crea l'entità mostro e lo aggiunge al team
-        monster = monster_factory.create_monster(self.monster_name, game.turn)
-        game.add_monster_to_team(monster)
-        if game.match_start: #se i team sono completi, inizia la battaglia
-            new_moves = button_factory.create_move_buttons(game.selected_monster.moves)
-            MENU_LAYOUTS['choose_move']['buttons'] = new_moves
-            game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
-        else: #sennò procede con la selezione del prossimo mostro
-            game.selected_button_i = 0
-            MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
+        game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
 
 
 class ButtonFactory:
@@ -103,6 +115,7 @@ class ButtonFactory:
 
     def create_menu_button(self, text, x, y, action):
         return Button(text, (x, y), self.main_menu_button_size, action, self.font, self.inactive_main_menu_color, self.active_main_menu_color)
+    
     def create_move_buttons(self, moves: list):
         moves_padding = screen_y/40
         bar_y = screen_y - bar_h
@@ -118,6 +131,7 @@ class ButtonFactory:
         mossa4 = Button(moves[3].name, (x4, y4), self.moves_button_size, UseMove(moves[3]), self.font, self.inactive_move_color, self.active_move_color)
 
         return [mossa1,mossa2,mossa3,mossa4]
+    
     def create_draft_buttons(self, monsters : zip):
         monsters = list(monsters)
         button_w = self.draft_button_size[0] #tanto è un quadrato
@@ -133,20 +147,45 @@ class ButtonFactory:
             buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), self.font, monster_img))
             x+=button_w+draft_x_padding
         return buttons
-    def create_change_monster_buttons(self, monsters):
+    
+    def create_choose_team_limit_buttons(self):
+        n = 1
+        buttons = []
+        spacing_x = self.main_menu_button_size[0]/2.5
+        spacing_y = self.main_menu_button_size[1]/2
+        
+        y = screen_y/2-self.main_menu_button_size[1]*1.5-spacing_y
+        for _ in range(3):
+            x = screen_x/2-self.main_menu_button_size[0]-spacing_x
+            for _ in range(2):
+                buttons.append(self.create_menu_button(str(n), x, y, SetTeamLimitAction(n)))
+                x+=self.main_menu_button_size[0]+spacing_x*2
+                n+=1
+            y+=self.main_menu_button_size[1]+spacing_y
+        
+        return buttons
+
+    def create_change_monster_buttons(self, monsters, force_change = False):
         change_monster_buttons = []
         monsters = monsters.copy()
-        monsters.remove(game.selected_monster) # escludo il mostro selezionato
+        if game.selected_monster.alive:
+            monsters.remove(game.selected_monster) # escludo il mostro selezionato
         # qui calcolo le posizioni e dimensioni dei tasti in base al numero di mostri
 
-        n = len(monsters)+1
+        n = len(monsters)
+        if not force_change:
+            n+=1
         min_button_width = screen_x/5
         button_h = bar_h/2
         
-        if n==1: # c'è solo il tasto Indietro
+        if n==1: # c'è solo un tasto
             button_w = min(screen_x, min_button_width)
             x, y = (screen_x - button_w) / 2, screen_y-bar_h + button_h / 2
-            return [Button('Indietro', (x, y), (button_w, button_h), Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
+            if not force_change:
+                return [Button('Indietro', (x, y), (button_w, button_h), Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
+            else:
+                monster=monsters[0]
+                return [Button(monster.name, (x, y), (button_w, button_h), ChooseMonster(monster), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
 
         extra_space = screen_x - n * min_button_width
         ideal_spacing = extra_space / (n - 1)
@@ -155,12 +194,14 @@ class ButtonFactory:
         spacing = max(min_spacing, min(ideal_spacing, max_spacing))
         buttons_size = ((screen_x - (n+1)*spacing)/n, button_h)
         x, y = spacing, screen_y-bar_h+buttons_size[1]/2
-        back_button = Button('Indietro', (x, y), buttons_size, Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
-        change_monster_buttons.append(back_button)
-        for monster in monsters:
+        if not force_change:
+            back_button = Button('Indietro', (x, y), buttons_size, Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
+            change_monster_buttons.append(back_button)
             x += spacing+buttons_size[0]
+        for monster in monsters:
             bt = Button(monster.name, (x, y), buttons_size, ChooseMonster(monster), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
             change_monster_buttons.append(bt)
+            x += spacing+buttons_size[0]
         return change_monster_buttons
 
 class Button(pygame.sprite.Sprite):
@@ -300,12 +341,30 @@ class MenuLayouts:
                 "rows": 2,
                 "cols": 6
             },
+            "choose_team_limit": {
+                "buttons": None,
+                "rows": 3,
+                "cols": 2
+            },
             "change_monster": {
                 "buttons": None,
                 "rows": 1,
                 "cols": game.team_limit
             }
         }
+
+    def update_menu_buttons(self, menu_name, new_buttons):
+        self[menu_name]['buttons'] = new_buttons
+    
+    def update_change_monster_buttons(self, force_change=False):
+        new_buttons = button_factory.create_change_monster_buttons(game.teams[game.selected_monster.team], force_change=force_change)
+        self['change_monster']['cols'] = len(new_buttons)
+        self.update_menu_buttons('change_monster', new_buttons)
+
+    def update_moves_buttons(self):
+        new_moves = button_factory.create_move_buttons(game.selected_monster.moves)
+        self.update_menu_buttons('choose_move', new_moves)
+
     def __getitem__(self, key): # per comodità
         return self.layouts[key]
 
@@ -339,14 +398,6 @@ def buttons_check_input(event):
         return
 
     new_i = r * cols + c
-
     buttons[i].set_active(False)
     game.selected_button_i = new_i
     buttons[new_i].set_active(True)
-
-def update_moves():
-    new_moves = game.selected_monster.moves
-    new_moves = button_factory.create_move_buttons(new_moves)
-    MENU_LAYOUTS['choose_move']['buttons'] = new_moves
-    game.active_menu = 'choose_action'
-    game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])

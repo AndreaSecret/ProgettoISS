@@ -14,6 +14,10 @@ monster_size = (monster_size, monster_size)
 attacking_monster_pos = (screen_x/5,screen_y/2)
 defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
 
+choose_tl_title_font = font.Font(game_font, screen_y//15)
+choose_tl_title_surface = choose_tl_title_font.render('Scegliere numero componenti team', True, (255, 255, 255))
+choose_tl_title_pos = ((screen_x - choose_tl_title_surface.get_width())/2,screen_y//50)
+
 # game core
 
 class Game:
@@ -113,18 +117,22 @@ class Game:
         self.selected_box.set_monster(self.selected_monster)
 
     def update(self, display):
-        if self.match_start:
-            self.animation_manager.update()
-            self.is_in_animation = True if self.animation_manager.current else False
-        
-            self.selected_monster_sprite.update(display)
-            self.enemy_monster_sprite.update(display)
+        if self.active_menu == 'choose_team_limit':
+            display.blit(choose_tl_title_surface, choose_tl_title_pos)
 
-            self.game_bar.draw(display)
-            self.box_group.update()
-            if self.animation_manager.current!='switching_sides':
-                self.box_group.draw(display)
+        if self.game_start:
+            if self.match_start:
+                self.animation_manager.update()
+                self.is_in_animation = True if self.animation_manager.current else False
+            
+                self.selected_monster_sprite.update(display)
+                self.enemy_monster_sprite.update(display)
 
-        display.blit(self.turn_surface, self.turn_surf_pos)
+                self.game_bar.draw(display)
+                self.box_group.update()
+                if self.animation_manager.current!='switching_sides':
+                    self.box_group.draw(display)
+
+            display.blit(self.turn_surface, self.turn_surf_pos)
 
 game = Game()

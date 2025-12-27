@@ -21,8 +21,7 @@ while game.run:
             if event.key == pygame.K_ESCAPE:
                 game.run = False
             
-    if game.game_start:
-        game.update(screen)
+    game.update(screen)
 
     game.buttons_group.draw(screen)
     pygame.display.update()

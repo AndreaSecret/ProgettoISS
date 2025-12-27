@@ -134,18 +134,18 @@ class ButtonFactory:
     
     def create_draft_buttons(self, monsters : zip):
         monsters = list(monsters)
-        button_w = self.draft_button_size[0] #tanto è un quadrato
-        draft_x_padding = (screen_x-button_w*6)/7
-        draft_y_padding = (screen_y/2-button_w)/2
+        button_side = self.draft_button_size[0] #tanto è un quadrato
+        draft_x_padding = (screen_x-button_side*6)/7
+        draft_y_padding = button_side/2
         buttons = []
-        x, y = draft_x_padding, draft_y_padding
+        x, y = draft_x_padding, screen_y/2-draft_y_padding-button_side
         for monster_name, monster_img in monsters[:6]:
             buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), self.font, monster_img))
-            x+=button_w+draft_x_padding
-        x, y = draft_x_padding, draft_y_padding*2+button_w
+            x+=button_side+draft_x_padding
+        x, y = draft_x_padding, screen_y/2+draft_y_padding
         for monster_name, monster_img in monsters[6:]:
             buttons.append(DraftButton(monster_name, (x,y), self.draft_button_size, ChooseDraft(monster_name), self.font, monster_img))
-            x+=button_w+draft_x_padding
+            x+=button_side+draft_x_padding
         return buttons
     
     def create_choose_team_limit_buttons(self):

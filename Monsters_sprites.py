@@ -26,6 +26,8 @@ class VisualMonster(Sprite):
         self.rect.topleft = self.pos
 
         if self.monster.hp<=0 and self.monster.alive:
+            self.monster.hp = 0
+            self.monster.alive = False
             self.death_effect()
 
     def change_monster(self, monster):

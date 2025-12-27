@@ -7,12 +7,16 @@ serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Ser
 serpe_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
 drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), monster_size)
 drago_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_back.png'), monster_size)
+divoratore_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Divoratore/divoratore_front.png'), monster_size)
+divoratore_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Divoratore/divoratore_back.png'), monster_size)
 
 MONSTERS = {
     'Serpe': {'front': serpe_front_img,
               'back': serpe_back_img},
     'Drago': {'front': drago_front_img,
-              'back': drago_back_img}
+              'back': drago_back_img},
+    'Divoratore': {'front': divoratore_front_img,
+              'back': divoratore_back_img}
 }
 
 # monster actions
@@ -68,8 +72,6 @@ class Monster:
         self.alive = True
 
     def die(self):
-        self.hp = 0
-        self.alive = False
         game.remove_monster_from_team(self)
 
 class MonsterFactory:
@@ -109,6 +111,23 @@ class MonsterFactory:
             back_image=MONSTERS[name]['back'].copy(),
             team=team
         )
+    
+    def create_divoratore(self, team):
+        name = 'Divoratore'
+        return Monster(
+            name=name,
+            hp=80,
+            attack=200,
+            defense=5,
+            moves=[
+                self.move_factory.create_attack("Leccata", 60),
+                self.move_factory.create_heal("Scodinzola", 200),
+                DEFAULT_MOVES['attack'],
+                DEFAULT_MOVES['heal']],
+            front_image=MONSTERS[name]['front'].copy(),
+            back_image=MONSTERS[name]['back'].copy(),
+            team=team
+        )
 
     def create_monster(self, monster_name, team):
         if monster_name in list(MONSTERS.keys()):
@@ -117,6 +136,8 @@ class MonsterFactory:
                     return self.create_snake(team)
                 case 'Drago':
                     return self.create_dragon(team)
+                case 'Divoratore':
+                    return self.create_divoratore(team)
         else:
             raise ValueError("Questo mostro non esiste")
 

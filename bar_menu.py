@@ -16,7 +16,7 @@ class MatchBar(Sprite):
 
 bar = GroupSingle(MatchBar())
 
-class StatsBox(Sprite):
+class BattleBox(Sprite):
     def __init__(self, pos):
         super().__init__()
         self.monster = None
@@ -79,7 +79,48 @@ class StatsBox(Sprite):
         self.image.blit(name_surface, self.text_pos)
 
 attacking_monster_box_pos = (attacking_monster_pos[0]+monster_size[0]*1.2, attacking_monster_pos[1]+monster_size[1]*0.2)
-attacking_monster_box = StatsBox(attacking_monster_box_pos)
+attacking_monster_box = BattleBox(attacking_monster_box_pos)
 
 defending_monster_box_pos = (defending_monster_pos[0]-monster_size[0]*0.2-attacking_monster_box.rect.w, defending_monster_pos[1]+monster_size[1]*0.2)
-defending_monster_box = StatsBox(defending_monster_box_pos)
+defending_monster_box = BattleBox(defending_monster_box_pos)
+
+class InfoBox(Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        self.monster = None
+        self.size_x, self.size_y = (monster_size[0]*0.5, monster_size[1]*0.3)
+        self.image = Surface((self.size_x, self.size_y))
+        self.image.fill("#FFFFFF")
+        self.pos = pos
+        self.rect = self.image.get_rect(topleft = self.pos)
+
+        self.spacing_y = self.size_y/20
+        text_size = round(self.size_y/3-self.spacing_y)
+        self.text_font = font.Font(game_font, text_size)
+
+    def set_monster(self, monster):
+        self.monster = monster
+        self.image.fill("#FFFFFF")
+
+        atk_text = 'ATK: '+str(self.monster.attack)
+        if self.monster.attack > self.monster.base_attack: atk_color = (0,0,200)
+        elif self.monster.attack < self.monster.base_attack: atk_color = (200,0,0)
+        else: atk_color = (0,0,0)
+        atk_text_surface = self.text_font.render(atk_text, True, atk_color)
+        atk_pos = ((self.size_x-atk_text_surface.get_width())/2, self.size_y/2-self.spacing_y-atk_text_surface.get_height())
+        self.image.blit(atk_text_surface, atk_pos)
+
+        def_text = 'DEF: '+str(self.monster.defense)
+        if self.monster.defense > self.monster.base_defense: def_color = (0,0,200)
+        elif self.monster.defense < self.monster.base_defense: def_color = (200,0,0)
+        else: def_color = (0,0,0)
+        def_text_surface = self.text_font.render(def_text, True, def_color)
+        def_pos = ((self.size_x-def_text_surface.get_width())/2, self.size_y/2+self.spacing_y)
+        self.image.blit(def_text_surface, def_pos)
+
+
+defending_monster_infobox_pos = (defending_monster_pos[0]+monster_size[0], defending_monster_pos[1]-monster_size[1]*0.1)
+defending_monster_infobox = InfoBox(defending_monster_infobox_pos)
+
+attacking_monster_infobox_pos = (attacking_monster_pos[0]-defending_monster_infobox.rect.w*0.8, attacking_monster_pos[1]-monster_size[1]*0.1)
+attacking_monster_infobox = InfoBox(attacking_monster_infobox_pos)

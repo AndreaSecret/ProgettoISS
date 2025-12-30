@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-import pygame
+from pygame import transform, image
 from game_assets import monster_size, game
+from moves import move_factory, DEFAULT_MOVES
 
 # caricamente immagini dei mostri
-serpe_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
-serpe_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
-drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), monster_size)
-drago_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_back.png'), monster_size)
-divoratore_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Divoratore/divoratore_front.png'), monster_size)
-divoratore_back_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Divoratore/divoratore_back.png'), monster_size)
+serpe_front_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
+serpe_back_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
+drago_front_img = transform.scale(image.load('monster_sprites/Drago/drago_front.png'), monster_size)
+drago_back_img = transform.scale(image.load('monster_sprites/Drago/drago_back.png'), monster_size)
+divoratore_front_img = transform.scale(image.load('monster_sprites/Divoratore/divoratore_front.png'), monster_size)
+divoratore_back_img = transform.scale(image.load('monster_sprites/Divoratore/divoratore_back.png'), monster_size)
 
 MONSTERS = {
     'Serpe': {'front': serpe_front_img,
@@ -17,43 +18,6 @@ MONSTERS = {
               'back': drago_back_img},
     'Divoratore': {'front': divoratore_front_img,
               'back': divoratore_back_img}
-}
-
-# monster actions
-
-class MonsterAction(ABC):
-    def __init__(self, name, power, target):
-        self.name = name
-        self.power = power
-        self.target = target
-
-    @abstractmethod
-    def execute(self, attacker, target):
-        pass
-
-
-class AttackAction(MonsterAction):
-    def execute(self, attacker, target):
-        damage = max(1, attacker.attack + self.power - target.defense) # max perchè se la difesa è troppo alta allora la mossa cura
-        target.hp -= damage
-
-class HealAction(MonsterAction):
-    def execute(self, attacker, target=None):
-        attacker.hp += self.power
-        if attacker.hp > attacker.max_hp: attacker.hp = attacker.max_hp
-
-class MonsterActionFactory:     
-    @staticmethod
-    def create_attack(name, power):
-        return AttackAction(name, power, target = 'to_other')
-
-    @staticmethod
-    def create_heal(name, power):
-        return HealAction(name, power, target = 'to_self')
-
-DEFAULT_MOVES = {
-    'attack': MonsterActionFactory.create_attack("Graffio", 15),
-    'heal': MonsterActionFactory.create_heal("Rigenerazione", 15),
 }
 
 
@@ -65,12 +29,39 @@ class Monster:
         self.hp = hp
         self.max_hp = hp
         self.attack = attack
+        self.base_attack = attack
         self.defense = defense
+        self.base_defense = defense
+        self.status_effects = []
         self.front_image = front_image
         self.back_image = back_image
         self.team = team
         self.alive = True
+    
+    def add_status_effect(self, se):
+        self.status_effects.append(se.copy())
 
+    def update_status_effects(self):
+        atk_mult, def_mult = 0.0, 0.0
+
+        for se in self.status_effects.copy():
+            stat, value = se.apply()
+
+            if not se.active:
+                self.status_effects.remove(se)
+                continue
+
+            if stat == 'attack':
+                atk_mult += value
+            elif stat == 'defense':
+                def_mult += value
+
+        atk_mult = max(atk_mult, -1.0)
+        def_mult = max(def_mult, -1.0)
+
+        self.attack = int(self.base_attack * (1 + atk_mult))
+        self.defense = int(self.base_defense * (1 + def_mult))
+            
     def die(self):
         game.remove_monster_from_team(self)
 
@@ -88,7 +79,7 @@ class MonsterFactory:
             moves=[
                 self.move_factory.create_attack("Palla di fuoco", 30),
                 self.move_factory.create_heal("Assorbi magma", 20),
-                DEFAULT_MOVES['attack'],
+                self.move_factory.create_debuff("Calura", 50, 'defense', 2),
                 DEFAULT_MOVES['heal']],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
@@ -121,7 +112,7 @@ class MonsterFactory:
             defense=5,
             moves=[
                 self.move_factory.create_attack("Leccata", 60),
-                self.move_factory.create_heal("Scodinzola", 200),
+                self.move_factory.create_buff("Scodinzola", 20, 'attack', 2),
                 DEFAULT_MOVES['attack'],
                 DEFAULT_MOVES['heal']],
             front_image=MONSTERS[name]['front'].copy(),
@@ -141,5 +132,4 @@ class MonsterFactory:
         else:
             raise ValueError("Questo mostro non esiste")
 
-move_factory = MonsterActionFactory()
 monster_factory = MonsterFactory(move_factory)

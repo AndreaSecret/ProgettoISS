@@ -6,7 +6,7 @@ from game_assets import game, screen_size, screen_x, screen_y, game_font, bar_h
 from monsters import monster_factory, MONSTERS
 from Monsters_sprites import VisualMonster
 from animations import animation_manager
-from bar_menu import bar, defending_monster_box, attacking_monster_box
+from bar_menu import bar, defending_monster_box, attacking_monster_box, attacking_monster_infobox, defending_monster_infobox
 from numpy import stack, float32, uint8
 
 #button action functions
@@ -40,7 +40,7 @@ class SetTeamLimitAction(ButtonAction):
         start_draft()
 
 def start_draft(): #inizio draft
-    game.set_initiation(menu_layouts=MENU_LAYOUTS, VisualMonsterClass=VisualMonster, animation_manager=animation_manager, bar=bar, selected_box=attacking_monster_box, enemy_box=defending_monster_box)
+    game.set_initiation(MENU_LAYOUTS, VisualMonster, animation_manager, bar, attacking_monster_box, defending_monster_box, attacking_monster_infobox, defending_monster_infobox)
 
     monsters_names = choices(list(MONSTERS.keys()), k=12) #scelgo 12 mostri a caso
     imgs = [MONSTERS[monster]['front'].copy() for monster in monsters_names]
@@ -72,7 +72,7 @@ class ChangeMonster(ButtonAction):
         MENU_LAYOUTS.update_change_monster_buttons()
         game.refresh_buttons(MENU_LAYOUTS['change_monster']['buttons'])
 
-class Back_from_ChangeMonster(ButtonAction):
+class Back_to_choose_action(ButtonAction):
     def execute(self):
         game.active_menu = 'choose_action'
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
@@ -89,6 +89,10 @@ class ChooseMove(ButtonAction):
     def execute(self):
         game.active_menu = 'choose_move'
         game.refresh_buttons(MENU_LAYOUTS['choose_move']['buttons'])
+        # in questo caso seleziono il secondo tasto al posto del primo (Non seleziono 'Indietro')
+        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
+        game.selected_button_i=1
+        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
 
 class UseMove(ButtonAction):
     def __init__(self, move):
@@ -119,18 +123,21 @@ class ButtonFactory:
     def create_move_buttons(self, moves: list):
         moves_padding = screen_y/40
         bar_y = screen_y - bar_h
+        # Tasto Indietro
+        x0,y0 = moves_padding, (screen_y-bar_y)/2-self.moves_button_size[1]/2+bar_y
+        back_button = Button('Indietro', (x0, y0), self.moves_button_size, Back_to_choose_action(), self.font, self.inactive_move_color, self.active_move_color)
         # posizioni dei 4 bottoni delle mosse:
-        x1,y1 = moves_padding, bar_y+moves_padding
-        x2,y2 = moves_padding*2+self.moves_button_size[0], bar_y+moves_padding
-        x3,y3 = moves_padding, bar_y+moves_padding*2+self.moves_button_size[1]
-        x4,y4 = moves_padding*2+self.moves_button_size[0], bar_y+moves_padding*2+self.moves_button_size[1]
+        x1,y1 = moves_padding*2+self.moves_button_size[0], bar_y+moves_padding
+        x2,y2 = moves_padding*3+self.moves_button_size[0]*2, bar_y+moves_padding
+        x3,y3 = moves_padding*2+self.moves_button_size[0], bar_y+moves_padding*2+self.moves_button_size[1]
+        x4,y4 = moves_padding*3+self.moves_button_size[0]*2, bar_y+moves_padding*2+self.moves_button_size[1]
 
         mossa1 = Button(moves[0].name, (x1, y1), self.moves_button_size, UseMove(moves[0]), self.font, self.inactive_move_color, self.active_move_color)
         mossa2 = Button(moves[1].name, (x2, y2), self.moves_button_size, UseMove(moves[1]), self.font, self.inactive_move_color, self.active_move_color)
         mossa3 = Button(moves[2].name, (x3, y3), self.moves_button_size, UseMove(moves[2]), self.font, self.inactive_move_color, self.active_move_color)
         mossa4 = Button(moves[3].name, (x4, y4), self.moves_button_size, UseMove(moves[3]), self.font, self.inactive_move_color, self.active_move_color)
 
-        return [mossa1,mossa2,mossa3,mossa4]
+        return [back_button,mossa1,mossa2,back_button,mossa3,mossa4]
     
     def create_draft_buttons(self, monsters : zip):
         monsters = list(monsters)
@@ -182,7 +189,7 @@ class ButtonFactory:
             button_w = min(screen_x, min_button_width)
             x, y = (screen_x - button_w) / 2, screen_y-bar_h + button_h / 2
             if not force_change:
-                return [Button('Indietro', (x, y), (button_w, button_h), Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
+                return [Button('Indietro', (x, y), (button_w, button_h), Back_to_choose_action(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
             else:
                 monster=monsters[0]
                 return [Button(monster.name, (x, y), (button_w, button_h), ChooseMonster(monster), self.font, self.inactive_main_menu_color, self.active_main_menu_color)]
@@ -195,7 +202,7 @@ class ButtonFactory:
         buttons_size = ((screen_x - (n+1)*spacing)/n, button_h)
         x, y = spacing, screen_y-bar_h+buttons_size[1]/2
         if not force_change:
-            back_button = Button('Indietro', (x, y), buttons_size, Back_from_ChangeMonster(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
+            back_button = Button('Indietro', (x, y), buttons_size, Back_to_choose_action(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
             change_monster_buttons.append(back_button)
             x += spacing+buttons_size[0]
         for monster in monsters:
@@ -334,7 +341,7 @@ class MenuLayouts:
             "choose_move": {
                 "buttons": None,
                 "rows": 2,
-                "cols": 2
+                "cols": 3
             },
             "draft": {
                 "buttons": None,

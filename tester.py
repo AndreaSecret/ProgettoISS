@@ -1,7 +1,8 @@
-a = [1,2,3]
-a.insert(2, 4)
-print(a)
+def test(a):
+    assert a in ['a', 'b']
 
+test('a')
+test('g')
 # import pygame
 # from buttons import DraftButton, ChangeMonster
 # drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), (150,150))

@@ -47,7 +47,7 @@ class Game:
         self.animation_manager = None
         self.is_in_animation = False
 
-    def set_initiation(self, menu_layouts, VisualMonsterClass, animation_manager, bar, selected_box, enemy_box):
+    def set_initiation(self, menu_layouts, VisualMonsterClass, animation_manager, bar, selected_box, enemy_box, selected_infobox, enemy_infobox):
         self.MENU_LAYOUT = menu_layouts
         self.game_start = True
         self.visualMonsterClass = VisualMonsterClass
@@ -56,6 +56,9 @@ class Game:
         self.selected_box = selected_box
         self.enemy_box = enemy_box
         self.box_group = Group(self.selected_box, self.enemy_box)
+        self.selected_infobox = selected_infobox
+        self.enemy_infobox = enemy_infobox
+        self.infobox_group = Group(self.selected_infobox, self.enemy_infobox)
 
     def add_monster_to_team(self, monster):
         self.teams[self.turn].append(monster)
@@ -80,8 +83,7 @@ class Game:
         self.enemy_monster = self.teams[1][0]
         self.selected_monster_sprite = self.visualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking')
         self.enemy_monster_sprite = self.visualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending')
-        self.selected_box.set_monster(self.selected_monster)
-        self.enemy_box.set_monster(self.enemy_monster)
+        self.refresh_boxes()
 
     def refresh_buttons(self, new_buttons): #rimuove i bottoni attuali e li cambia in new_buttons
         self.buttons_group = Group(new_buttons)
@@ -93,14 +95,21 @@ class Game:
         self.active_menu = 'choose_action'
         self.refresh_buttons(self.MENU_LAYOUT['choose_action']['buttons'])
 
+    def refresh_boxes(self): # funzione che si occupa di aggiornare le due box con le info dei mostri
+        self.selected_box.set_monster(self.selected_monster)
+        self.selected_infobox.set_monster(self.selected_monster)
+        self.enemy_box.set_monster(self.enemy_monster)
+        self.enemy_infobox.set_monster(self.enemy_monster)
+
     def switch_turn_number(self):
         self.turn = abs(self.turn - 1)
         self.turn_surface = turn_font.render(str(self.turn+1), True, self.team_colors[self.turn])
 
     def switch_turn(self):
         self.selected_monster, self.enemy_monster = self.enemy_monster, self.selected_monster
-        self.selected_box.set_monster(self.selected_monster)
-        self.enemy_box.set_monster(self.enemy_monster)
+        self.update_status_effects()
+        self.refresh_boxes()
+
         if self.selected_monster.alive:
             self.active_menu = 'choose_action'
         else:
@@ -110,15 +119,23 @@ class Game:
 
         self.MENU_LAYOUT.update_moves_buttons()
         self.switch_turn_number()
+    
+    def update_status_effects(self):
+        for monster in self.teams[0]:
+            monster.update_status_effects()
+        for monster in self.teams[1]:
+            monster.update_status_effects()
 
     def switch_monster(self, monster):
         self.selected_monster = monster
         self.selected_monster_sprite.change_monster(monster)
-        self.selected_box.set_monster(self.selected_monster)
+        self.refresh_boxes()
 
     def update(self, display):
         if self.active_menu == 'choose_team_limit':
             display.blit(choose_tl_title_surface, choose_tl_title_pos)
+        elif self.active_menu == 'choose_move':
+            self.infobox_group.draw(display)
 
         if self.game_start:
             if self.match_start:

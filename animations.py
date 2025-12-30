@@ -184,7 +184,7 @@ def attack_animations(monster_sprite, target, move):
         raise ValueError('Move target not identified')
 
     def apply_effect():
-        move.execute(monster_sprite.monster, target)
+        move.execute(attacker=monster_sprite.monster, target=target)
 
     attack_anim = Animation(
         obj=monster_sprite,

@@ -1,25 +1,46 @@
 from abc import ABC, abstractmethod
+from game_assets import game
 
 class MonsterAction(ABC):
-    def __init__(self, name, power, target):
+    def __init__(self, name, power, target, type, choose_target=False, xp_gain=1):
         self.name = name
+        self.type = type
+        assert type in ['attack', 'heal', 'buff', 'debuff']
         self.power = power
         assert target in ['to_other', 'to_self']
         self.target = target
+        self.choose_target = choose_target # applicabile solo ai buff!!!
+        self.xp_gain = xp_gain # xp che dà la mossa quando utilizzata
+
+    def execute(self, attacker, target):
+        
+        self.activate(attacker, target) # eseguo la mossa
+
+        if game.teams_xp[attacker.team] < game.max_xp: # se non è attivo il plus
+            game.teams_xp[attacker.team] += self.xp_gain # aggiungo l'esperienza alla barra
+        if game.teams_xp[attacker.team] >= game.max_xp: #se è attivo o deve attivarsi il plus
+            if game.active_plus_durations[attacker.team] > 0: # il plus è stato attivato turni scorsi
+                game.active_plus_durations[attacker.team]-=1
+                if game.active_plus_durations[attacker.team] == 0: game.teams_xp[attacker.team] = 0 # rimuovo il plus
+            else: # attivo il plus
+                game.active_plus_durations[attacker.team] = game.plus_moves_duration
 
     @abstractmethod
-    def execute(self, attacker, target):
+    def activate(self, attacker, target):
         pass
 
 class AttackAction(MonsterAction):
-    def execute(self, attacker, target):
+    def activate(self, attacker, target):
         damage = max(1, attacker.attack + self.power - target.defense) # max perchè se la difesa è troppo alta allora la mossa cura
         target.hp -= damage
 
 class HealAction(MonsterAction):
-    def execute(self, attacker, target=None):
-        attacker.hp += self.power
-        if attacker.hp > attacker.max_hp: attacker.hp = attacker.max_hp
+    def activate(self, attacker, target):
+        if self.choose_target:
+            target.hp += self.power
+            if target.hp > target.max_hp: target.hp = target.max_hp
+        else:
+            attacker.hp = min(attacker.hp+self.power, attacker.max_hp)
 
 class Status_effect(ABC):
     def __init__(self, targeted_stat, power, duration):
@@ -33,7 +54,6 @@ class Status_effect(ABC):
 
     def apply(self):
         self.effective_duration-=1
-        print(self.effective_duration)
         if self.effective_duration > 0:
             return (self.targeted_stat, self.power/100)
         else:
@@ -44,41 +64,72 @@ class Status_effect(ABC):
         return Status_effect(self.targeted_stat, self.power, self.duration)
 
 class Apply_Buff_Action(MonsterAction):
-    def __init__(self, name, power, target, status_effect):
-        super().__init__(name, power, target)
+    def __init__(self, name, power, target, status_effect, type, choose_target=False):
+        super().__init__(name, power, target, type, choose_target)
         self.status_effect = status_effect
-    def execute(self, attacker, target=None):
-        attacker.add_status_effect(self.status_effect)
+
+    def activate(self, attacker, target):
+        if self.choose_target:
+            target.add_status_effect(self.status_effect)
+        else:
+            attacker.add_status_effect(self.status_effect)
 
 class Apply_Debuff_Action(MonsterAction):
-    def __init__(self, name, power, target, status_effect):
-        super().__init__(name, power, target)
+    def __init__(self, name, power, target, status_effect, type):
+        super().__init__(name, power, target, type)
         self.status_effect = status_effect
-    def execute(self, target, attacker=None):
-        target.add_status_effect(self.status_effect)
-    
 
+    def activate(self, attacker, target):
+        target.add_status_effect(self.status_effect)
+
+class PlusAction(MonsterAction): # decorator pattern
+    def __init__(self, base_move: MonsterAction):
+        super().__init__(
+            name=base_move.name + '+',
+            power=base_move.power,
+            target=base_move.target,
+            type=base_move.type,
+            choose_target=base_move.choose_target,
+            xp_gain=base_move.xp_gain
+        )
+        self.base_move = base_move
+
+    @abstractmethod
+    def activate(self, attacker, target):
+        self.base_move.activate(attacker=attacker, target=target)
+        pass
+
+class PlusLifeSteal(PlusAction):
+    def __init__(self, base_move, heal_amount):
+        super().__init__(base_move)
+        self.heal_amount = heal_amount
+
+    def activate(self, attacker, target):
+        self.base_move.activate(attacker, target)
+        attacker.hp = min(attacker.hp + self.heal_amount, attacker.max_hp)
 
 class MonsterActionFactory:     
     @staticmethod
     def create_attack(name, power):
-        return AttackAction(name, power, target = 'to_other')
+        return AttackAction(name, power, type='attack', target = 'to_other')
 
     @staticmethod
-    def create_heal(name, power):
-        return HealAction(name, power, target = 'to_self')
+    def create_heal(name, power, choose_target=False):
+        return HealAction(name, power, type='heal', target = 'to_self', choose_target=choose_target)
     
     @staticmethod
     def create_debuff(name, power, targeted_stat, duration):
-        return Apply_Debuff_Action(name, power, target = 'to_other', status_effect=Status_effect(targeted_stat, -power, duration))
+        return Apply_Debuff_Action(name, power, type='debuff', target = 'to_other', status_effect=Status_effect(targeted_stat, -power, duration))
     
     @staticmethod
-    def create_buff(name, power, targeted_stat, duration):
-        return Apply_Buff_Action(name, power, target = 'to_self', status_effect=Status_effect(targeted_stat, power, duration))
-
-DEFAULT_MOVES = {
-    'attack': MonsterActionFactory.create_attack("Graffio", 15),
-    'heal': MonsterActionFactory.create_heal("Rigenerazione", 15),
-}
+    def create_buff(name, power, targeted_stat, duration, choose_target=False):
+        return Apply_Buff_Action(name, power, type='buff', target = 'to_self', status_effect=Status_effect(targeted_stat, power, duration), choose_target=choose_target)
 
 move_factory = MonsterActionFactory()
+
+DEFAULT_MOVES = {
+    'attack': move_factory.create_attack("Graffio", 15), # danno al nemico
+    'heal': move_factory.create_heal("Rigenerazione", 15), #cura a se stesso
+    'heal_any': move_factory.create_heal("Aiuto a casa", 40, choose_target=True), # cura a chiunque nel team
+    'buff_any': move_factory.create_buff('Rinforzo', 30, 'attack', 3, choose_target=True) # buff di 40% a chiunque nel team per 3 turni
+}

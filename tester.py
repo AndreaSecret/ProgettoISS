@@ -1,8 +1,11 @@
-def test(a):
-    assert a in ['a', 'b']
+moves = {
+    1: '1',
+    2: None,
+    3: '3'
+}
 
-test('a')
-test('g')
+print([moves[base] or base for base in moves])
+
 # import pygame
 # from buttons import DraftButton, ChangeMonster
 # drago_front_img =  pygame.transform.scale(pygame.image.load('monster_sprites/Drago/drago_front.png'), (150,150))

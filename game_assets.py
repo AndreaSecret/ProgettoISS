@@ -1,9 +1,10 @@
 # Informazioni generali di inizializzazione
-import pyautogui
+from pyautogui import size
 from pygame import font
 from pygame.sprite import Group
+from pygame.surface import Surface
 font.init()
-screen_x, screen_y = pyautogui.size()
+screen_x, screen_y = size()
 screen_size = (screen_x, screen_y)
 game_font = 'game_files/PixeloidSans.ttf'
 turn_font = font.Font(game_font, screen_y//15)
@@ -14,21 +15,34 @@ monster_size = (monster_size, monster_size)
 attacking_monster_pos = (screen_x/5,screen_y/2)
 defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
 
+# titolo "choose team limit"
 choose_tl_title_font = font.Font(game_font, screen_y//15)
 choose_tl_title_surface = choose_tl_title_font.render('Scegliere numero componenti team', True, (255, 255, 255))
 choose_tl_title_pos = ((screen_x - choose_tl_title_surface.get_width())/2,screen_y//50)
+
+# descrizione mossa selezionata
+move_desc_font = font.Font(game_font, int(bar_h/7))
+move_desc_pos_x = screen_x*3/5
+move_desc_padding_y = bar_h/12
 
 # game core
 
 class Game:
     def __init__(self):
-        self.team_limit = 0 #numero massimo di mostri in squadra (CAMBIABILE DA 1 A 6!!!)
+        self.team_limit = 0 #numero massimo di mostri in squadra, viene scelto nella scheramata choose_team_limit
+        self.max_xp = 3
+        self.plus_moves_duration = 2 # turni di durata delle mosse plus
+
         self.teams = {0: [],
                       1: []}
         self.team_colors = {
             0 : (0,0,255),
             1 : (255,0,0)
         }
+        self.teams_xp = {0: 0,
+                         1: 0}
+        self.active_plus_durations = {0 : 0,
+                                     1 : 0}
 
         self.run = True # se l'applicazione è avviata
         self.game_start = False # se è iniziata la partita 
@@ -46,6 +60,9 @@ class Game:
 
         self.animation_manager = None
         self.is_in_animation = False
+
+        self.move_desc_surf = Surface((bar_h, bar_h))
+        self.generated_move_desc = None # variabile utile per evitare di calcolare la descrizione ogni frame
 
     def set_initiation(self, menu_layouts, VisualMonsterClass, animation_manager, bar, selected_box, enemy_box, selected_infobox, enemy_infobox):
         self.MENU_LAYOUT = menu_layouts
@@ -112,13 +129,13 @@ class Game:
 
         if self.selected_monster.alive:
             self.active_menu = 'choose_action'
-        else:
+        else: # se il mostro è stato ucciso, ne fa scegliere un altro
             self.active_menu = 'change_monster'
             self.MENU_LAYOUT.update_change_monster_buttons(force_change=True)
             self.refresh_buttons(self.MENU_LAYOUT['change_monster']['buttons'])
 
-        self.MENU_LAYOUT.update_moves_buttons()
         self.switch_turn_number()
+        self.MENU_LAYOUT.update_moves_buttons()
     
     def update_status_effects(self):
         for monster in self.teams[0]:
@@ -131,12 +148,66 @@ class Game:
         self.selected_monster_sprite.change_monster(monster)
         self.refresh_boxes()
 
-    def update(self, display):
-        if self.active_menu == 'choose_team_limit':
-            display.blit(choose_tl_title_surface, choose_tl_title_pos)
-        elif self.active_menu == 'choose_move':
-            self.infobox_group.draw(display)
+    def generate_move_desc(self, move):
+        self.move_desc_surf.fill('White')
+        if not move: # è nel tasto indietro
+            return move_desc_font.render('', True, (255, 255, 255))
+        move_desc_text = ''+str(move.power)
+        match move.type:
+            case 'attack':
+                move_desc_text+=' danno a'
+            case 'heal':
+                move_desc_text+=' cura a'
+            case 'buff' | 'debuff':
+                if move.type == 'debuff': move_desc_text='-'+move_desc_text
+                else: move_desc_text='+'+move_desc_text
+                move_desc_text+='%'
+                match move.status_effect.targeted_stat:
+                    case 'attack':
+                        move_desc_text+=' attacco a'
+                    case 'defense':
+                        move_desc_text+=' difesa a'
+        
+        if move.choose_target:
+            move_desc_text+='d un alleato a scelta'
+        else:
+            if move.target == 'to_other':
+                move_desc_text+='l nemico'
+            else:
+                move_desc_text+=' se stesso'
+        if move.type == 'buff' or move.type == 'debuff':
+            move_desc_text+=' per '+str(move.status_effect.duration)+' turni.'
+        else:
+            move_desc_text+='.'
 
+        # text wrapping
+        words = move_desc_text.split(' ')
+        lines = []
+        current_line = ''
+
+        for word in words:
+            test_line = current_line + (' ' if current_line else '') + word
+            if move_desc_font.size(test_line)[0] <= self.move_desc_surf.get_width():
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        # trovo le posizioni delle lines
+        text_h = move_desc_font.size(test_line)[1]
+        total_h = len(lines)*text_h + (len(lines)-1)*move_desc_padding_y
+        y =  (bar_h - total_h) / 2
+        for line in lines:
+            text = move_desc_font.render(line, True, (0,0,0))
+            x= (self.move_desc_surf.get_width()-text.get_width())/2
+            self.move_desc_surf.blit(text, (x,y))
+            y+=text_h+move_desc_padding_y
+        self.generated_move_desc = move
+
+    def update(self, display): # chiamata ogni frame
         if self.game_start:
             if self.match_start:
                 self.animation_manager.update()
@@ -151,5 +222,12 @@ class Game:
                     self.box_group.draw(display)
 
             display.blit(self.turn_surface, self.turn_surf_pos)
+        if self.active_menu == 'choose_team_limit':
+            display.blit(choose_tl_title_surface, choose_tl_title_pos)
+        elif self.active_menu == 'choose_move':
+            self.infobox_group.draw(display)
+            selected_move = getattr(self.MENU_LAYOUT['choose_move']['buttons'][self.selected_button_i].action, 'move', None)
+            if selected_move != self.generated_move_desc: self.generate_move_desc(selected_move)
+            display.blit(self.move_desc_surf, (move_desc_pos_x, screen_y-bar_h))
 
 game = Game()

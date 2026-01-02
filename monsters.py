@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
 from pygame import transform, image
 from game_assets import monster_size, game
-from moves import move_factory, DEFAULT_MOVES
+from moves import move_factory, DEFAULT_MOVES, PlusLifeSteal
 
 # caricamente immagini dei mostri
 serpe_front_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
@@ -20,6 +19,28 @@ MONSTERS = {
               'back': divoratore_back_img}
 }
 
+# divoratore
+leccata = move_factory.create_attack("Leccata", 60)
+leccata_plus = PlusLifeSteal(leccata, heal_amount=40)
+scodinzola = move_factory.create_buff("Scodinzola", 20, 'attack', 2)
+MONSTERS_MOVES = {
+    'Drago' : {
+                move_factory.create_attack("Palla di fuoco", 30) : None,
+                move_factory.create_heal("Assorbi magma", 20) : None,
+                move_factory.create_debuff("Calura", 50, 'defense', 2) : None,
+                DEFAULT_MOVES['heal_any'] : None},
+    'Serpe' : {
+                move_factory.create_attack("Morso", 40) : None,
+                move_factory.create_heal("Cambio muta", 15) : None,
+                DEFAULT_MOVES['buff_any'] : None,
+                DEFAULT_MOVES['heal'] : None
+    },
+    'Divoratore': {
+                leccata : leccata_plus,
+                scodinzola : None,
+                DEFAULT_MOVES['attack'] : None,
+                DEFAULT_MOVES['heal'] : None}
+}
 
 class Monster:
     def __init__(self, name, moves, hp, attack, defense, front_image, back_image, team):
@@ -76,11 +97,7 @@ class MonsterFactory:
             hp=150,
             attack=20,
             defense=35,
-            moves=[
-                self.move_factory.create_attack("Palla di fuoco", 30),
-                self.move_factory.create_heal("Assorbi magma", 20),
-                self.move_factory.create_debuff("Calura", 50, 'defense', 2),
-                DEFAULT_MOVES['heal']],
+            moves=MONSTERS_MOVES[name],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
             team=team
@@ -93,11 +110,7 @@ class MonsterFactory:
             hp=100,
             attack=50,
             defense=15,
-            moves=[
-                self.move_factory.create_attack("Morso", 40),
-                self.move_factory.create_heal("Cambio muta", 15),
-                DEFAULT_MOVES['attack'],
-                DEFAULT_MOVES['heal']],
+            moves=MONSTERS_MOVES[name],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
             team=team
@@ -110,11 +123,7 @@ class MonsterFactory:
             hp=80,
             attack=200,
             defense=5,
-            moves=[
-                self.move_factory.create_attack("Leccata", 60),
-                self.move_factory.create_buff("Scodinzola", 20, 'attack', 2),
-                DEFAULT_MOVES['attack'],
-                DEFAULT_MOVES['heal']],
+            moves=MONSTERS_MOVES[name],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
             team=team

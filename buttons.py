@@ -6,7 +6,7 @@ from game_assets import game, screen_size, screen_x, screen_y, game_font, bar_h
 from monsters import monster_factory, MONSTERS
 from Monsters_sprites import VisualMonster
 from animations import animation_manager
-from bar_menu import bar, defending_monster_box, attacking_monster_box, attacking_monster_infobox, defending_monster_infobox
+from boxes import bar, defending_monster_box, attacking_monster_box, attacking_monster_infobox, defending_monster_infobox
 from numpy import stack, float32, uint8
 
 #button action functions
@@ -89,7 +89,7 @@ class ChooseMove(ButtonAction):
     def execute(self):
         game.active_menu = 'choose_move'
         game.refresh_buttons(MENU_LAYOUTS['choose_move']['buttons'])
-        # in questo caso seleziono il secondo tasto al posto del primo (Non seleziono 'Indietro')
+        # in questa schermata seleziono il secondo tasto al posto del primo (Non seleziono 'Indietro')
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
         game.selected_button_i=1
         MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
@@ -99,7 +99,24 @@ class UseMove(ButtonAction):
         self.move = move
 
     def execute(self):
-        game.animation_manager.add_attack_anim(game.selected_monster_sprite, game.enemy_monster, self.move)
+        if self.move.choose_target:
+            new_buttons = button_factory.create_choose_monster_to_buff_buttons(game.teams[game.selected_monster.team], self.move)
+            MENU_LAYOUTS['change_monster']['cols'] = len(new_buttons)
+            MENU_LAYOUTS.update_menu_buttons('change_monster', new_buttons)
+            game.active_menu = 'change_monster'
+            game.refresh_buttons(MENU_LAYOUTS['change_monster']['buttons'])
+        else:
+            game.animation_manager.add_attack_anim(game.selected_monster_sprite, game.enemy_monster, self.move)
+            game.animation_manager.add_switching_sides_anim(game.selected_monster_sprite, game.enemy_monster_sprite, game.switch_turn)
+            game.active_menu = 'choose_action'
+            game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
+
+class ChooseMonster_to_buff(ButtonAction):
+    def __init__(self, monster, move):
+        self.monster = monster
+        self.move = move
+    def execute(self):
+        game.animation_manager.add_attack_anim(game.selected_monster_sprite, self.monster, self.move)
         game.animation_manager.add_switching_sides_anim(game.selected_monster_sprite, game.enemy_monster_sprite, game.switch_turn)
         game.active_menu = 'choose_action'
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
@@ -120,7 +137,14 @@ class ButtonFactory:
     def create_menu_button(self, text, x, y, action):
         return Button(text, (x, y), self.main_menu_button_size, action, self.font, self.inactive_main_menu_color, self.active_main_menu_color)
     
-    def create_move_buttons(self, moves: list):
+    def create_move_buttons(self, moves: dict):
+        print(game.turn)
+        print(game.teams_xp)
+        print(game.active_plus_durations)
+        if game.active_plus_durations[game.turn] > 0: # se sono attive le mosse plus
+            moves = [moves[base] or base for base in moves] # se ha una plus, usa quella, sennò la base
+        else:
+            moves = list(moves.keys())
         moves_padding = screen_y/40
         bar_y = screen_y - bar_h
         # Tasto Indietro
@@ -177,8 +201,8 @@ class ButtonFactory:
         monsters = monsters.copy()
         if game.selected_monster.alive:
             monsters.remove(game.selected_monster) # escludo il mostro selezionato
-        # qui calcolo le posizioni e dimensioni dei tasti in base al numero di mostri
 
+        # qui calcolo le posizioni e dimensioni dei tasti in base al numero di mostri
         n = len(monsters)
         if not force_change:
             n+=1
@@ -210,6 +234,31 @@ class ButtonFactory:
             change_monster_buttons.append(bt)
             x += spacing+buttons_size[0]
         return change_monster_buttons
+
+    def create_choose_monster_to_buff_buttons(self, monsters, move):
+        monster_buttons = []
+        monsters = monsters.copy()
+
+        # qui calcolo le posizioni e dimensioni dei tasti in base al numero di mostri
+        n = len(monsters)+1
+        min_button_width = screen_x/5
+        button_h = bar_h/2
+        
+        extra_space = screen_x - n * min_button_width
+        ideal_spacing = extra_space / (n - 1)
+        min_spacing = screen_y/80
+        max_spacing = screen_y/20
+        spacing = max(min_spacing, min(ideal_spacing, max_spacing))
+        buttons_size = ((screen_x - (n+1)*spacing)/n, button_h)
+        x, y = spacing, screen_y-bar_h+buttons_size[1]/2
+        back_button = Button('Indietro', (x, y), buttons_size, Back_to_choose_action(), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
+        monster_buttons.append(back_button)
+        x += spacing+buttons_size[0]
+        for monster in monsters:
+            bt = Button(monster.name, (x, y), buttons_size, ChooseMonster_to_buff(monster, move), self.font, self.inactive_main_menu_color, self.active_main_menu_color)
+            monster_buttons.append(bt)
+            x += spacing+buttons_size[0]
+        return monster_buttons
 
 class Button(pygame.sprite.Sprite):
     def __init__(self, name, pos, size, action, font, inactive_color, active_color):

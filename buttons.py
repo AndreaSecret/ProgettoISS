@@ -138,9 +138,6 @@ class ButtonFactory:
         return Button(text, (x, y), self.main_menu_button_size, action, self.font, self.inactive_main_menu_color, self.active_main_menu_color)
     
     def create_move_buttons(self, moves: dict):
-        print(game.turn)
-        print(game.teams_xp)
-        print(game.active_plus_durations)
         if game.active_plus_durations[game.turn] > 0: # se sono attive le mosse plus
             moves = [moves[base] or base for base in moves] # se ha una plus, usa quella, sennò la base
         else:

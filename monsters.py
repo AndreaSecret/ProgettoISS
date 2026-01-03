@@ -1,6 +1,6 @@
 from pygame import transform, image
 from game_assets import monster_size, game
-from moves import move_factory, DEFAULT_MOVES, PlusLifeSteal
+from moves import move_factory, DEFAULT_MOVES
 
 # caricamente immagini dei mostri
 serpe_front_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
@@ -19,26 +19,38 @@ MONSTERS = {
               'back': divoratore_back_img}
 }
 
+# drago
+palla_di_fuoco = move_factory.create_attack("Palla di fuoco", 30)
+palla_di_fuoco_plus = move_factory.create_plus_damage(palla_di_fuoco, power=30)
+
+# serpe
+cambio_muta = move_factory.create_heal("Cambio muta", 25)
+cambio_muta_plus = move_factory.create_plus_heal(cambio_muta, power=50)
+
 # divoratore
 leccata = move_factory.create_attack("Leccata", 60)
-leccata_plus = PlusLifeSteal(leccata, heal_amount=40)
+leccata_plus = move_factory.create_plus_heal(leccata, power=40)
 scodinzola = move_factory.create_buff("Scodinzola", 20, 'attack', 2)
+scodinzola_plus = move_factory.create_plus_debuff(scodinzola, 50, 'defense', 1)
+bagno_di_fango = move_factory.create_heal('Bagno di fango', 20)
+bagno_di_fango_plus = move_factory.create_plus_remove_debuffs(bagno_di_fango)
+
 MONSTERS_MOVES = {
     'Drago' : {
-                move_factory.create_attack("Palla di fuoco", 30) : None,
+                palla_di_fuoco : palla_di_fuoco_plus,
                 move_factory.create_heal("Assorbi magma", 20) : None,
                 move_factory.create_debuff("Calura", 50, 'defense', 2) : None,
                 DEFAULT_MOVES['heal_any'] : None},
     'Serpe' : {
                 move_factory.create_attack("Morso", 40) : None,
-                move_factory.create_heal("Cambio muta", 15) : None,
+                cambio_muta : cambio_muta_plus,
                 DEFAULT_MOVES['buff_any'] : None,
                 DEFAULT_MOVES['heal'] : None
     },
     'Divoratore': {
                 leccata : leccata_plus,
-                scodinzola : None,
-                DEFAULT_MOVES['attack'] : None,
+                scodinzola : scodinzola_plus,
+                bagno_di_fango : bagno_di_fango_plus,
                 DEFAULT_MOVES['heal'] : None}
 }
 
@@ -87,9 +99,6 @@ class Monster:
         game.remove_monster_from_team(self)
 
 class MonsterFactory:
-    def __init__(self, move_factory):
-        self.move_factory = move_factory
-
     def create_dragon(self, team):
         name = 'Drago'
         return Monster(
@@ -107,9 +116,9 @@ class MonsterFactory:
         name = 'Serpe'
         return Monster(
             name=name,
-            hp=100,
+            hp=120,
             attack=50,
-            defense=15,
+            defense=25,
             moves=MONSTERS_MOVES[name],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
@@ -121,8 +130,8 @@ class MonsterFactory:
         return Monster(
             name=name,
             hp=80,
-            attack=200,
-            defense=5,
+            attack=100,
+            defense=15,
             moves=MONSTERS_MOVES[name],
             front_image=MONSTERS[name]['front'].copy(),
             back_image=MONSTERS[name]['back'].copy(),
@@ -141,4 +150,4 @@ class MonsterFactory:
         else:
             raise ValueError("Questo mostro non esiste")
 
-monster_factory = MonsterFactory(move_factory)
+monster_factory = MonsterFactory()

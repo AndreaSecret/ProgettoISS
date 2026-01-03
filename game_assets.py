@@ -23,7 +23,7 @@ choose_tl_title_pos = ((screen_x - choose_tl_title_surface.get_width())/2,screen
 # descrizione mossa selezionata
 move_desc_font = font.Font(game_font, int(bar_h/7))
 move_desc_pos_x = screen_x*3/5
-move_desc_padding_y = bar_h/12
+move_desc_padding_y = bar_h/20
 
 # game core
 
@@ -61,7 +61,7 @@ class Game:
         self.animation_manager = None
         self.is_in_animation = False
 
-        self.move_desc_surf = Surface((bar_h, bar_h))
+        self.move_desc_surf = Surface((bar_h*1.5, bar_h))
         self.generated_move_desc = None # variabile utile per evitare di calcolare la descrizione ogni frame
 
     def set_initiation(self, menu_layouts, VisualMonsterClass, animation_manager, bar, selected_box, enemy_box, selected_infobox, enemy_infobox):
@@ -180,6 +180,31 @@ class Game:
         else:
             move_desc_text+='.'
 
+        # plus moves
+        if move.is_plus:
+            match move.plus_type:
+                case 'heal':
+                    move_desc_text += ' Cura inoltre se stesso di '+str(move.heal_amount)+'.'
+                case 'damage':
+                    move_desc_text += ' Inoltre fa '+str(move.dmg_amount)+' al nemico.'
+                case 'debuff':
+                    move_desc_text += ' Inoltre '+str(move.plus_status_effect.power)+'%'
+                    match move.plus_status_effect.targeted_stat:
+                        case 'attack':
+                            move_desc_text+=' attacco al nemico.'
+                        case 'defense':
+                            move_desc_text+=' difesa al nemico.'
+                case 'buff':
+                    move_desc_text += ' Inoltre +'+str(move.plus_status_effect.power)+'%'
+                    match move.plus_status_effect.targeted_stat:
+                        case 'attack':
+                            move_desc_text+=' attacco a se stesso.'
+                        case 'defense':
+                            move_desc_text+=' difesa a se stesso.'
+                case 'remove_debuffs':
+                    move_desc_text += ' Inoltre rimuove i propri debuff.'
+
+
         # text wrapping
         words = move_desc_text.split(' ')
         lines = []
@@ -222,6 +247,7 @@ class Game:
                     self.box_group.draw(display)
 
             display.blit(self.turn_surface, self.turn_surf_pos)
+
         if self.active_menu == 'choose_team_limit':
             display.blit(choose_tl_title_surface, choose_tl_title_pos)
         elif self.active_menu == 'choose_move':

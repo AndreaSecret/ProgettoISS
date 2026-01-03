@@ -11,6 +11,7 @@ class MonsterAction(ABC):
         self.target = target
         self.choose_target = choose_target # applicabile solo ai buff!!!
         self.xp_gain = xp_gain # xp che dà la mossa quando utilizzata
+        self.is_plus = False
 
     def execute(self, attacker, target):
         
@@ -83,7 +84,7 @@ class Apply_Debuff_Action(MonsterAction):
         target.add_status_effect(self.status_effect)
 
 class PlusAction(MonsterAction): # decorator pattern
-    def __init__(self, base_move: MonsterAction):
+    def __init__(self, base_move: MonsterAction, plus_type):
         super().__init__(
             name=base_move.name + '+',
             power=base_move.power,
@@ -93,20 +94,52 @@ class PlusAction(MonsterAction): # decorator pattern
             xp_gain=base_move.xp_gain
         )
         self.base_move = base_move
+        self.is_plus = True
+        assert plus_type in ['heal', 'damage', 'debuff', 'buff', 'remove_debuffs']
+        self.plus_type = plus_type
 
     @abstractmethod
     def activate(self, attacker, target):
         self.base_move.activate(attacker=attacker, target=target)
         pass
 
-class PlusLifeSteal(PlusAction):
+class PlusHeal(PlusAction):
     def __init__(self, base_move, heal_amount):
-        super().__init__(base_move)
+        super().__init__(base_move, plus_type='heal')
         self.heal_amount = heal_amount
 
     def activate(self, attacker, target):
         self.base_move.activate(attacker, target)
         attacker.hp = min(attacker.hp + self.heal_amount, attacker.max_hp)
+
+class PlusDamage(PlusAction):
+    def __init__(self, base_move, dmg_amount):
+        super().__init__(base_move, plus_type='damage')
+        self.dmg_amount = dmg_amount
+
+    def activate(self, attacker, target):
+        self.base_move.activate(attacker, target)
+        damage = max(1, attacker.attack + self.dmg_amount - target.defense)
+        target.hp -= damage
+
+class PlusDebuff(PlusAction):
+    def __init__(self, base_move, plus_status_effect):
+        super().__init__(base_move, plus_type='debuff')
+        self.status_effect = base_move.status_effect
+        self.plus_status_effect = plus_status_effect
+
+    def activate(self, attacker, target):
+        self.base_move.activate(attacker, target)
+        target.add_status_effect(self.plus_status_effect)
+
+class PlusRemoveDebuffs(PlusAction):
+    def __init__(self, base_move):
+        super().__init__(base_move, plus_type='remove_debuffs')
+
+    def activate(self, attacker, target):
+        self.base_move.activate(attacker, target)
+        for se in attacker.status_effects.copy():
+            if se.power < 0: attacker.status_effects.remove(se)
 
 class MonsterActionFactory:     
     @staticmethod
@@ -125,6 +158,22 @@ class MonsterActionFactory:
     def create_buff(name, power, targeted_stat, duration, choose_target=False):
         return Apply_Buff_Action(name, power, type='buff', target = 'to_self', status_effect=Status_effect(targeted_stat, power, duration), choose_target=choose_target)
 
+    @staticmethod
+    def create_plus_damage(base, power):
+        return PlusDamage(base, power)
+
+    @staticmethod
+    def create_plus_heal(base, power):
+        return PlusHeal(base, power)
+    
+    @staticmethod
+    def create_plus_debuff(base, power, targeted_stat, duration):
+        return PlusDebuff(base, plus_status_effect=Status_effect(targeted_stat, -power, duration))
+    
+    @staticmethod
+    def create_plus_remove_debuffs(base):
+        return PlusRemoveDebuffs(base)
+    
 move_factory = MonsterActionFactory()
 
 DEFAULT_MOVES = {

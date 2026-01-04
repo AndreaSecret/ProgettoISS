@@ -8,6 +8,7 @@ pygame.init()
 clock = pygame.time.Clock()
 fps = 30
 screen=pygame.display.set_mode(screen_size, FULLSCREEN)
+background = pygame.transform.scale(pygame.image.load('background.png').convert(), screen_size) # credits: https://www.kindpng.com/imgv/iJohmob_pokemon-battle-png-battle-background-pokemon-black-2/
 
 while game.run:
     key_input=pygame.key.get_pressed()
@@ -21,7 +22,7 @@ while game.run:
             if event.key == pygame.K_ESCAPE:
                 game.run = False
             
-    game.update(screen)
+    game.update(screen, background=background)
 
     game.buttons_group.draw(screen)
     pygame.display.update()

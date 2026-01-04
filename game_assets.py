@@ -232,9 +232,11 @@ class Game:
             y+=text_h+move_desc_padding_y
         self.generated_move_desc = move
 
-    def update(self, display): # chiamata ogni frame
+    def update(self, display, background): # chiamata ogni frame
         if self.game_start:
             if self.match_start:
+                display.blit(background, (0,0))
+
                 self.animation_manager.update()
                 self.is_in_animation = True if self.animation_manager.current else False
             

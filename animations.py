@@ -1,6 +1,6 @@
-from game_assets import game, attacking_monster_pos, defending_monster_pos, screen_x
+from game_assets import attacking_monster_pos, defending_monster_pos, screen_x, game
 
-animation_types = ['attacking', 'returning_to_place', 'switching_sides']
+animation_types = ['attacking', 'returning_to_place', 'switching_sides', 'dying']
 
 # singleton managing all the animations
 
@@ -10,27 +10,25 @@ class AnimationManager:
         self.animations_queue = []
 
     def add_animations(self, type, animations):
+        assert type in animation_types
+        assert all(anim.duration == animations[0].duration for anim in animations), "Le animazioni simultanee devono avere la stessa durata"
         self.animations_queue.append((type, animations))
 
     def update(self):
         '''
         La classe lavora sul primo elemento della coda,
         ogni elemento della coda è formato da una tupla ('nome_animazione', [animazioni])
-        animazioni è una lista, ma può essere anche un solo elemento.
+        animazioni è una lista, ma può essere anche di un solo elemento.
         Questo perchè se più elementi sono presenti in [animazioni], verranno eseguiti in simultanea.
-        Lavorando infatti su una coda, passa alla seconda animazione in coda solo dopo aver terminato la prima
+        Lavorando su una coda, passa alla seconda animazione in coda solo dopo aver terminato la prima.
         '''
         if self.animations_queue:
             self.current, anims = self.animations_queue[0]
             for anim in anims:
                 is_finished = anim.update()
-                if is_finished:
-                    if len(anims)==1:
-                        self.animations_queue.pop(0)
-            if len(anims)>1 and is_finished: #in questo caso ho fatto finire tutte le animazioni
+            if is_finished: #in questo caso ho fatto finire tutte le animazioni
                 self.animations_queue.pop(0)
-                game.selected_monster_sprite, game.enemy_monster_sprite = game.enemy_monster_sprite, game.selected_monster_sprite
-
+            return is_finished
         else:
             self.current = None
     
@@ -184,7 +182,8 @@ def attack_animations(monster_sprite, target, move):
         raise ValueError('Move target not identified')
 
     def apply_effect():
-        move.execute(attacker=monster_sprite.monster, target=target)
+        move_xp = move.execute(attacker=monster_sprite.monster, target=target)
+        game.update_xp(move_xp)
 
     attack_anim = Animation(
         obj=monster_sprite,
@@ -215,6 +214,5 @@ def death_animation(monster_sprite):
         motion_func=line_motion,
         parameters=death_line+tuple([False]),
         duration=death_anim_duration,
-        fade_out=1,
-        on_finish=monster_sprite.monster.die)
+        fade_out=1)
     return death_anim

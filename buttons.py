@@ -63,8 +63,7 @@ class ChooseDraft(ButtonAction):
             MENU_LAYOUTS.update_menu_buttons('choose_move', new_moves)
             game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
         else: #sennò procede con la selezione del prossimo mostro
-            game.selected_button_i = 0
-            MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
+            game.select_button(0)
 
 class ChangeMonster(ButtonAction):
     def execute(self):
@@ -90,9 +89,7 @@ class ChooseMove(ButtonAction):
         game.active_menu = 'choose_move'
         game.refresh_buttons(MENU_LAYOUTS['choose_move']['buttons'])
         # in questa schermata seleziono il secondo tasto al posto del primo (Non seleziono 'Indietro')
-        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(False)
-        game.selected_button_i=1
-        MENU_LAYOUTS[game.active_menu]['buttons'][game.selected_button_i].set_active(True)
+        game.select_button(1)
 
 class UseMove(ButtonAction):
     def __init__(self, move):

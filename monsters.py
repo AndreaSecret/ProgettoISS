@@ -1,5 +1,5 @@
 from pygame import transform, image
-from game_assets import monster_size, game
+from game_assets import monster_size
 from moves import move_factory, DEFAULT_MOVES
 
 # caricamente immagini dei mostri
@@ -94,12 +94,16 @@ class Monster:
 
         self.attack = int(self.base_attack * (1 + atk_mult))
         self.defense = int(self.base_defense * (1 + def_mult))
-            
-    def die(self):
-        game.remove_monster_from_team(self)
+    
+    def check_death(self):
+        if self.hp<=0 and self.alive:
+            self.hp = 0
+            self.alive = False
+            return True
+        return False
 
 class MonsterFactory:
-    def create_dragon(self, team):
+    def create_drago(self, team):
         name = 'Drago'
         return Monster(
             name=name,
@@ -112,7 +116,7 @@ class MonsterFactory:
             team=team
         )
 
-    def create_snake(self, team):
+    def create_serpe(self, team):
         name = 'Serpe'
         return Monster(
             name=name,
@@ -142,9 +146,9 @@ class MonsterFactory:
         if monster_name in list(MONSTERS.keys()):
             match monster_name:
                 case 'Serpe':
-                    return self.create_snake(team)
+                    return self.create_serpe(team)
                 case 'Drago':
-                    return self.create_dragon(team)
+                    return self.create_drago(team)
                 case 'Divoratore':
                     return self.create_divoratore(team)
         else:

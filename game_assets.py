@@ -86,7 +86,8 @@ class Game:
             self.start_match()
 
     def remove_monster_from_team(self, monster): #quando un mostro muore
-        self.teams[monster.team].remove(monster)
+        if monster in self.teams[monster.team]:
+            self.teams[monster.team].remove(monster)
 
         if len(self.teams[monster.team])==0:
             print(f'Giocatore {str(abs(self.turn)+1)} vince')
@@ -98,14 +99,19 @@ class Game:
 
         self.selected_monster = self.teams[0][0]
         self.enemy_monster = self.teams[1][0]
-        self.selected_monster_sprite = self.visualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking')
-        self.enemy_monster_sprite = self.visualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending')
+        self.selected_monster_sprite = self.visualMonsterClass(self.selected_monster, attacking_monster_pos, 'attacking', self.animation_manager)
+        self.enemy_monster_sprite = self.visualMonsterClass(self.enemy_monster, defending_monster_pos, 'defending', self.animation_manager)
         self.refresh_boxes()
 
     def refresh_buttons(self, new_buttons): #rimuove i bottoni attuali e li cambia in new_buttons
         self.buttons_group = Group(new_buttons)
         self.selected_button_i = 0
         new_buttons[self.selected_button_i].set_active(True)
+
+    def select_button(self, i):
+        self.MENU_LAYOUT[self.active_menu]['buttons'][self.selected_button_i].set_active(False)
+        self.selected_button_i = i
+        self.MENU_LAYOUT[self.active_menu]['buttons'][self.selected_button_i].set_active(True)
 
     def refresh_moves(self):
         self.MENU_LAYOUT.update_moves_buttons()
@@ -137,6 +143,16 @@ class Game:
         self.switch_turn_number()
         self.MENU_LAYOUT.update_moves_buttons()
     
+    def update_xp(self, xp):
+        if self.teams_xp[self.turn] < self.max_xp: # se non è attivo il plus
+            self.teams_xp[self.turn] += xp # aggiungo l'esperienza alla barra
+        if self.teams_xp[self.turn] >= self.max_xp: #se è attivo o deve attivarsi il plus
+            if self.active_plus_durations[self.turn] > 0: # il plus è stato attivato turni scorsi
+                self.active_plus_durations[self.turn]-=1
+                if self.active_plus_durations[self.turn] == 0: self.teams_xp[self.turn] = 0 # rimuovo il plus
+            else: # attivo il plus
+                self.active_plus_durations[self.turn] = self.plus_moves_duration
+
     def update_status_effects(self):
         for monster in self.teams[0]:
             monster.update_status_effects()
@@ -237,11 +253,15 @@ class Game:
             if self.match_start:
                 display.blit(background, (0,0))
 
-                self.animation_manager.update()
+                anim_finished = self.animation_manager.update()
+                if self.animation_manager.current == 'switching_sides' and anim_finished:
+                    self.selected_monster_sprite, self.enemy_monster_sprite = self.enemy_monster_sprite, self.selected_monster_sprite
                 self.is_in_animation = True if self.animation_manager.current else False
             
                 self.selected_monster_sprite.update(display)
-                self.enemy_monster_sprite.update(display)
+                enemy_is_alive = self.enemy_monster_sprite.update(display)
+                if not enemy_is_alive and self.animation_manager.current == 'switching_sides':
+                    self.remove_monster_from_team(self.enemy_monster)
 
                 self.game_bar.draw(display)
                 self.box_group.update()

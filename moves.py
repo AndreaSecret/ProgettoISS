@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from game_assets import game
 
 class MonsterAction(ABC):
     def __init__(self, name, power, target, type, choose_target=False, xp_gain=1):
@@ -17,14 +16,7 @@ class MonsterAction(ABC):
         
         self.activate(attacker, target) # eseguo la mossa
 
-        if game.teams_xp[attacker.team] < game.max_xp: # se non è attivo il plus
-            game.teams_xp[attacker.team] += self.xp_gain # aggiungo l'esperienza alla barra
-        if game.teams_xp[attacker.team] >= game.max_xp: #se è attivo o deve attivarsi il plus
-            if game.active_plus_durations[attacker.team] > 0: # il plus è stato attivato turni scorsi
-                game.active_plus_durations[attacker.team]-=1
-                if game.active_plus_durations[attacker.team] == 0: game.teams_xp[attacker.team] = 0 # rimuovo il plus
-            else: # attivo il plus
-                game.active_plus_durations[attacker.team] = game.plus_moves_duration
+        return self.xp_gain
 
     @abstractmethod
     def activate(self, attacker, target):
@@ -83,7 +75,7 @@ class Apply_Debuff_Action(MonsterAction):
     def activate(self, attacker, target):
         target.add_status_effect(self.status_effect)
 
-class PlusAction(MonsterAction): # decorator pattern
+class PlusAction(MonsterAction): # decorator pattern per le mosse plus
     def __init__(self, base_move: MonsterAction, plus_type):
         super().__init__(
             name=base_move.name + '+',

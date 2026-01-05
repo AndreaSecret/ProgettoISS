@@ -53,10 +53,13 @@ class BattleBox(Sprite):
     def set_monster(self, monster):
         self.monster = monster
 
-    def update(self):
+    def draw_background(self):
         self.image.fill('#FFFFFF')
+        monster_name = self.monster.name
+        name_surface = self.text_font.render(monster_name, True, (0, 0, 0))
+        self.image.blit(name_surface, self.text_pos)
 
-        # hp bar
+    def draw_hp_bar(self):
         hp_ratio = self.monster.hp/self.monster.max_hp
         self.hp_bar.fill("#FC2C2C")
         green_portion = self.bars_size_x*hp_ratio
@@ -69,8 +72,8 @@ class BattleBox(Sprite):
         self.hp_bar.blit(hp_text_surface, self.hp_text_pos)
 
         self.image.blit(self.hp_bar, self.hp_bar_pos)
-
-        # xp bar
+    
+    def draw_xp_bar(self):
         team = self.monster.team
         xp_ratio = game.teams_xp[team]/game.max_xp
         self.xp_bar.fill("#7AA5EF")
@@ -83,10 +86,10 @@ class BattleBox(Sprite):
             self.xp_bar.blit(filled_xp, (0,0))
         self.image.blit(self.xp_bar, self.xp_bar_pos)
 
-        #monster name
-        monster_name = self.monster.name
-        name_surface = self.text_font.render(monster_name, True, (0, 0, 0))
-        self.image.blit(name_surface, self.text_pos)
+    def update(self):
+        self.draw_background()
+        self.draw_hp_bar()
+        self.draw_xp_bar()
 
 attacking_monster_box_pos = (attacking_monster_pos[0]+monster_size[0]*1.2, attacking_monster_pos[1]+monster_size[1]*0.2)
 attacking_monster_box = BattleBox(attacking_monster_box_pos)

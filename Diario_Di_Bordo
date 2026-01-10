@@ -8,3 +8,36 @@ Ci siamo confrontati per decidere quale sarebbe la dimensione ideale della fines
 
 3/12/2025
 In data odierna ci siamo occupati di ridefinire meglio il nostro sprint, raffinare alcune User Story e implementarne altre. Sono anche stati fatti alcuni fix ad errori precedenti 
+
+18/12/2025
+Implementata l'infrastruttura per le animazioni tramite un template flessibile gestito dal singleton Game. Introdotta la classe MonsterVisual per la gestione grafica dei mostri e inseriti i primi sprite fronte/retro per "Serpe".
+
+19/12/2025
+Ottimizzato il codice trasformando i layout dei menu in classi. Creato l'AnimationManager per gestire le code di animazione e aggiunti gli asset grafici del "Drago", inclusa la sua prima animazione di attacco.
+
+22/12/2025
+Migliorata la UX della fase di draft: inseriti indicatori cromatici per i turni e feedback visivi sui mostri selezionati per facilitare la comprensione della sequenza di gioco.
+
+24/12/2025
+Sincronizzati gli effetti delle mosse con il timing delle animazioni. Introdotte animazioni specifiche per le azioni di cura e implementato il menu dinamico per il cambio del mostro in base alla dimensione del team.
+
+26/12/2025
+Focus sulla gestione della sconfitta: aggiunte animazioni di "morte", logica di sostituzione forzata del mostro esausto e schermata di fine partita. Implementata la selezione della dimensione del team (1-6) e le barre delle statistiche.
+
+27/12/2025
+Ampliato il roster dei personaggi con l'implementazione del nuovo mostro "Divoratore", definendone statistiche e caratteristiche base.
+
+30/12/2025
+Raffinata l'interfaccia di combattimento con l'aggiunta di infobox, sistema di buff/debuff e migliorata la navigazione nei menu tramite l'inserimento del tasto "Back" nella selezione mosse.
+
+02/01/2026
+Implementate le "Mosse Plus" e sviluppato un sistema per la generazione automatica delle descrizioni delle mosse, riducendo il lavoro manuale di inserimento testi.
+
+03/01/2026
+Eseguito un intervento di bilanciamento (Patch 0.0.0.1): depotenziato "Divoratore", aumentati gli HP di "Serpe" e migliorate le statistiche difensive del "Drago". Introdotta la versione Plus di Palla di Fuoco nel negozio.
+
+04/01/2026
+Migliorata l'estetica generale del gioco con l'inserimento di un'immagine di sfondo per il campo di battaglia.
+
+05/01/2026
+Concluso lo sprint con una fase di pulizia del codice e rifinitura totale dei componenti, eliminando ridondanze e ottimizzando le performance generali.

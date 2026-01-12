@@ -42,3 +42,4 @@ class VisualMonster(Sprite):
 
     def death_effect(self):
         self.animation_manager.add_death_anim(self)
+        

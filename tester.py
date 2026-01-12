@@ -1,10 +1,4 @@
-moves = {
-    1: '1',
-    2: None,
-    3: '3'
-}
-
-print([moves[base] or base for base in moves])
+print(type('n')==type(0))
 
 # import pygame
 # from buttons import DraftButton, ChangeMonster

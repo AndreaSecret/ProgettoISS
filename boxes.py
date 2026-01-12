@@ -7,7 +7,6 @@ font.init()
 class MatchBar(Sprite):
     def __init__(self):
         super().__init__()
-        self.state = None
         size = (screen_x, bar_h)
         self.image = Surface(size)
         self.image.fill("#FFFFFF")

@@ -25,11 +25,8 @@ class PlayAction(ButtonAction):
         game.refresh_buttons(MENU_LAYOUTS['choose_team_limit']['buttons'])
 
 class ExitAction(ButtonAction):
-    def __init__(self, game):
-        self.game = game
-
     def execute(self):
-        self.game.run = False
+        game.run = False
 
 class SetTeamLimitAction(ButtonAction):
     def __init__(self, number):
@@ -118,6 +115,10 @@ class ChooseMonster_to_buff(ButtonAction):
         game.active_menu = 'choose_action'
         game.refresh_buttons(MENU_LAYOUTS['choose_action']['buttons'])
 
+class RestartAction(ButtonAction):
+    def execute(self):
+        game.restart()
+        game.refresh_buttons([butt_startgame, butt_exitgame])
 
 class ButtonFactory:
     def __init__(self, screen_size, main_menu_button_size, moves_button_size, draft_button_size, font):
@@ -292,20 +293,20 @@ class Button(pygame.sprite.Sprite):
 
 class DraftButton(Button):
     def __init__(self, name, pos, size, action, font, monster_image):
-        self.base_img = pygame.transform.scale(monster_image, size)
+        self.base_img = pygame.transform.scale(monster_image, size).convert_alpha()
         self.unselected_image = None
         super().__init__(name, pos, size, action, font, inactive_color=None, active_color=None)
 
         # creazione immagini selezionate e non
         self.w = self.size[0]
         self.selection_offset = self.w*0.05
-        self.unselected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
+        self.unselected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2), pygame.SRCALPHA, 32)
         self.unselected_image.blit(self.base_img, (self.selection_offset,self.selection_offset))
         self.image = self.unselected_image
 
         self.rect = self.image.get_rect(topleft=self.pos)
 
-        self.selected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2))
+        self.selected_image = pygame.Surface((self.w+self.selection_offset*2, self.w+self.selection_offset*2), pygame.SRCALPHA, 32)
         selection_color = 'Yellow'
         selection_width = 2
         pygame.draw.rect(self.selected_image, selection_color, (0,0,self.w+self.selection_offset*2,self.w+self.selection_offset*2), selection_width)
@@ -337,20 +338,34 @@ class DraftButton(Button):
 
         self.action.execute()
 
-    def grayscale(self, img): # scopiazzato 
-        arr = pygame.surfarray.array3d(img).astype(float32)
+    def grayscale(self, img):
+        # RGB
+        rgb = pygame.surfarray.array3d(img).astype(float32)
 
-        # luminosity method (vectorized)
+        # Alpha (se presente)
+        alpha = None
+        if img.get_masks()[3] != 0:  # controlla se ha canale alpha
+            alpha = pygame.surfarray.array_alpha(img)
+
+        # Luminosity method
         gray = (
-            0.298 * arr[:, :, 0] +
-            0.587 * arr[:, :, 1] +
-            0.114 * arr[:, :, 2]
+            0.298 * rgb[:, :, 0] +
+            0.587 * rgb[:, :, 1] +
+            0.114 * rgb[:, :, 2]
         )
 
-        # ricrea RGB
-        gray_arr = stack((gray, gray, gray), axis=-1)
+        # Ricrea RGB
+        gray_rgb = stack((gray, gray, gray), axis=-1).astype(uint8)
 
-        return pygame.surfarray.make_surface(gray_arr.astype(uint8))
+        # Crea surface con alpha
+        gray_surf = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+        pygame.surfarray.blit_array(gray_surf, gray_rgb)
+
+        # Riapplica alpha
+        if alpha is not None:
+            pygame.surfarray.pixels_alpha(gray_surf)[:, :] = alpha
+
+        return gray_surf
 
 main_menu_buttons_dim = (screen_x/4, screen_y/6)
 moves_buttons_dim = (screen_x/6,screen_y/11)
@@ -359,13 +374,15 @@ draft_buttons_dim = (screen_x/9, screen_x/9)
 button_factory = ButtonFactory(screen_size, main_menu_buttons_dim, moves_buttons_dim, draft_buttons_dim, game_font)
 
 butt_startgame = button_factory.create_menu_button("Gioca", (screen_x - main_menu_buttons_dim[0]) / 2, screen_y/2 - main_menu_buttons_dim[1]*1.5, PlayAction())
-butt_exitgame = button_factory.create_menu_button("Esci", (screen_x - main_menu_buttons_dim[0]) / 2, screen_y/2 + main_menu_buttons_dim[1]*0.5, ExitAction(game))
+butt_exitgame = button_factory.create_menu_button("Esci", (screen_x - main_menu_buttons_dim[0]) / 2, screen_y/2 + main_menu_buttons_dim[1]*0.5, ExitAction())
 
 game.refresh_buttons([butt_startgame, butt_exitgame])
 
 bar_buttons_y = screen_y - bar_h/2 - main_menu_buttons_dim[1]/2
 butt_fight = button_factory.create_menu_button("Combatti", screen_x/4 - main_menu_buttons_dim[0]/2, bar_buttons_y, ChooseMove())
 butt_changemonster = button_factory.create_menu_button("Cambia", screen_x*3/4 - main_menu_buttons_dim[0]/2, bar_buttons_y, ChangeMonster())
+
+butt_restart = button_factory.create_menu_button("Ricomincia", (screen_x - main_menu_buttons_dim[0]) / 2, screen_y/2 + main_menu_buttons_dim[1]*0.5, RestartAction())
 
 
 class MenuLayouts:
@@ -400,6 +417,11 @@ class MenuLayouts:
                 "buttons": None,
                 "rows": 1,
                 "cols": game.team_limit
+            },
+            "restart": {
+                "buttons": [butt_restart],
+                "rows": 1,
+                "cols": 1
             }
         }
 

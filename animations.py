@@ -43,6 +43,9 @@ class AnimationManager:
 
     def add_death_anim(self, monster_sprite):
         self.animations_queue.insert(1, ('dying', [death_animation(monster_sprite)]))
+    
+    def restart(self):
+        self.__init__()
 
 animation_manager = AnimationManager() #singleton
 

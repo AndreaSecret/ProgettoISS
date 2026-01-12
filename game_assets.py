@@ -15,10 +15,14 @@ monster_size = (monster_size, monster_size)
 attacking_monster_pos = (screen_x/5,screen_y/2)
 defending_monster_pos = (screen_x*4/5-monster_size[0],screen_y/6)
 
-# titolo "choose team limit"
+# titoli di schermata
 choose_tl_title_font = font.Font(game_font, screen_y//15)
 choose_tl_title_surface = choose_tl_title_font.render('Scegliere numero componenti team', True, (255, 255, 255))
 choose_tl_title_pos = ((screen_x - choose_tl_title_surface.get_width())/2,screen_y//50)
+
+elyndor_title_font = font.Font(game_font, screen_y//10)
+elyndor_title_surface = elyndor_title_font.render('Elyndor', True, (255, 255, 255))
+elyndor_title_pos = ((screen_x - elyndor_title_surface.get_width())/2,screen_y//30)
 
 # descrizione mossa selezionata
 move_desc_font = font.Font(game_font, int(bar_h/7))
@@ -77,7 +81,18 @@ class Game:
         self.enemy_infobox = enemy_infobox
         self.infobox_group = Group(self.selected_infobox, self.enemy_infobox)
 
+    def numerate_monster(self, monster): # funzione che si occupa di numerare i mostri quando scegli 2 uguali nello stesso team
+        if monster.name in [m.name for m in self.teams[self.turn]]:
+            if monster.name[-1].isdigit():
+                monster.name = monster.name[:-1] + str(int(monster.name[-1])+1)
+            else:
+                monster.name = monster.name + ' 2'
+            return self.numerate_monster(monster)
+        return monster
+
     def add_monster_to_team(self, monster):
+        monster = self.numerate_monster(monster)
+
         self.teams[self.turn].append(monster)
 
         self.switch_turn_number()
@@ -90,8 +105,20 @@ class Game:
             self.teams[monster.team].remove(monster)
 
         if len(self.teams[monster.team])==0:
-            print(f'Giocatore {str(abs(self.turn)+1)} vince')
-            self.run = False
+            self.win(self.turn)
+
+    def win(self, player):
+        self.game_start = False
+        self.is_in_animation = False
+        win_font = font.Font(game_font, screen_y//10)
+        self.win_surface = win_font.render(f'Giocatore {str(abs(player)+1)} vince.', True, (255, 255, 255))
+        self.win_pos = ((screen_x - self.win_surface.get_width())/2,screen_y//3)
+        self.active_menu = 'restart'
+        self.refresh_buttons(self.MENU_LAYOUT[self.active_menu]['buttons'])
+    
+    def restart(self):
+        self.animation_manager.restart()
+        self.__init__()
 
     def start_match(self):
         self.match_start = True
@@ -248,7 +275,7 @@ class Game:
             y+=text_h+move_desc_padding_y
         self.generated_move_desc = move
 
-    def update(self, display, background): # chiamata ogni frame
+    def update(self, display, draft_background, background): # chiamata ogni frame
         if self.game_start:
             if self.match_start:
                 display.blit(background, (0,0))
@@ -268,14 +295,23 @@ class Game:
                 if self.animation_manager.current!='switching_sides':
                     self.box_group.draw(display)
 
+                if self.active_menu == 'choose_move':
+                    self.infobox_group.draw(display)
+                    selected_move = getattr(self.MENU_LAYOUT['choose_move']['buttons'][self.selected_button_i].action, 'move', None)
+                    if selected_move != self.generated_move_desc: self.generate_move_desc(selected_move)
+                    display.blit(self.move_desc_surf, (move_desc_pos_x, screen_y-bar_h))
+            else:
+                display.blit(draft_background, (0,0))
+
             display.blit(self.turn_surface, self.turn_surf_pos)
 
-        if self.active_menu == 'choose_team_limit':
-            display.blit(choose_tl_title_surface, choose_tl_title_pos)
-        elif self.active_menu == 'choose_move':
-            self.infobox_group.draw(display)
-            selected_move = getattr(self.MENU_LAYOUT['choose_move']['buttons'][self.selected_button_i].action, 'move', None)
-            if selected_move != self.generated_move_desc: self.generate_move_desc(selected_move)
-            display.blit(self.move_desc_surf, (move_desc_pos_x, screen_y-bar_h))
+        else:
+            if self.active_menu == 'start':
+                display.blit(elyndor_title_surface, elyndor_title_pos)
+            elif self.active_menu == 'choose_team_limit':
+                display.blit(choose_tl_title_surface, choose_tl_title_pos)
+            elif self.active_menu == 'restart':
+                display.blit(self.win_surface, self.win_pos)
+            
 
 game = Game()

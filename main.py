@@ -8,7 +8,9 @@ pygame.init()
 clock = pygame.time.Clock()
 fps = 30
 screen=pygame.display.set_mode(screen_size, FULLSCREEN)
+draft_background = pygame.transform.scale(pygame.image.load('background.png').convert(), screen_size)
 background = pygame.transform.scale(pygame.image.load('battle_bg.jpeg').convert(), screen_size) #fatta da noi 
+
 while game.run:
     screen.fill('Black')
     for event in pygame.event.get():
@@ -20,7 +22,7 @@ while game.run:
             if event.key == pygame.K_ESCAPE:
                 game.run = False
             
-    game.update(screen, background=background)
+    game.update(screen, draft_background=draft_background, background=background)
 
     game.buttons_group.draw(screen)
     pygame.display.update()

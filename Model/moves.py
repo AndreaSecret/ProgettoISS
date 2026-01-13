@@ -57,8 +57,8 @@ class Status_effect(ABC):
         return Status_effect(self.targeted_stat, self.power, self.duration)
 
 class Apply_Buff_Action(MonsterAction):
-    def __init__(self, name, power, target, status_effect, type, choose_target=False):
-        super().__init__(name, power, target, type, choose_target)
+    def __init__(self, name, power, target, status_effect, type, choose_target=False, xp_gain=2):
+        super().__init__(name, power, target, type, choose_target, xp_gain=xp_gain)
         self.status_effect = status_effect
 
     def activate(self, attacker, target):

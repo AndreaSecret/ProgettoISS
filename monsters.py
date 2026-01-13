@@ -2,7 +2,7 @@ from pygame import transform, image
 from game_assets import monster_size
 from moves import move_factory, DEFAULT_MOVES
 
-# caricamente immagini dei mostri
+# caricamento immagini dei mostri fatte da noi per entrambi i turni (frontale e di spalle)
 serpe_front_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)
 serpe_back_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_back.png'), monster_size)
 drago_front_img = transform.scale(image.load('monster_sprites/Drago/drago_front.png'), monster_size)
@@ -101,7 +101,8 @@ class Monster:
             self.alive = False
             return True
         return False
-
+    
+#utilizziamo il Factory Method per la creazione di oggetti mostro 
 class MonsterFactory:
     def create_drago(self, team):
         name = 'Drago'

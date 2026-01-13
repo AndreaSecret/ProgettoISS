@@ -1,5 +1,5 @@
 from pygame.sprite import Sprite
-from game_assets import screen_x
+from Model.game_assets import screen_x
 
 # class for graphic components of monsters
 

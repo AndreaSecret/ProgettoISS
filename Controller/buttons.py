@@ -2,11 +2,11 @@
 from abc import ABC, abstractmethod
 import pygame
 from random import choices
-from game_assets import game, screen_size, screen_x, screen_y, game_font, bar_h
-from monsters import monster_factory, MONSTERS
-from Monsters_sprites import VisualMonster
-from animations import animation_manager
-from boxes import bar, defending_monster_box, attacking_monster_box, attacking_monster_infobox, defending_monster_infobox
+from Model.game_assets import game, screen_size, screen_x, screen_y, game_font, bar_h
+from Model.monsters import monster_factory, MONSTERS
+from View.Monsters_sprites import VisualMonster
+from View.animations import animation_manager
+from View.boxes import bar, defending_monster_box, attacking_monster_box, attacking_monster_infobox, defending_monster_infobox
 from numpy import stack, float32, uint8
 
 #button action functions

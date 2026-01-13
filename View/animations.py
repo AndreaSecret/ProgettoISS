@@ -1,4 +1,4 @@
-from game_assets import attacking_monster_pos, defending_monster_pos, screen_x, game
+from Model.game_assets import attacking_monster_pos, defending_monster_pos, screen_x, game
 
 animation_types = ['attacking', 'returning_to_place', 'switching_sides', 'dying']
 

@@ -1,6 +1,6 @@
 from pygame import transform, image
-from game_assets import monster_size
-from moves import move_factory, DEFAULT_MOVES
+from Model.game_assets import monster_size
+from Model.moves import move_factory, DEFAULT_MOVES
 
 # caricamento immagini dei mostri fatte da noi per entrambi i turni (frontale e di spalle)
 serpe_front_img =  transform.scale(image.load('monster_sprites/Serpe/Serpe_front.png'), monster_size)

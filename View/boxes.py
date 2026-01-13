@@ -1,6 +1,6 @@
 from pygame import Surface, font
 from pygame.sprite import Sprite, GroupSingle
-from game_assets import game, screen_x, screen_y, bar_h, monster_size, attacking_monster_pos, defending_monster_pos, game_font
+from Model.game_assets import game, screen_x, screen_y, bar_h, monster_size, attacking_monster_pos, defending_monster_pos, game_font
 font.init()
 
 # semplicemente il rettangolo in basso con le mosse ecc.

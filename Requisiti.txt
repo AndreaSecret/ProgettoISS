@@ -28,7 +28,7 @@ Fasi di Attacco e Difesa
 Il gioco alterna meccaniche di offesa e difesa: quando un giocatore attacca, l’altro entra automaticamente in fase di difesa e riceve il danno calcolato.
 
 Gestione degli Attachi (Power-Up)
-L’azione “power-up” incrementa l'output offensivo del giocatore
+L’azione “power-up” incrementa l'output offensivo, difensivo e di buff del giocatore
 
 Interfaccia Realizzata con Pygame
 Il sistema utilizza Pygame per la gestione dell’input, del rendering grafico e del loop principale.
